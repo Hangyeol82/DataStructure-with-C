@@ -1,6 +1,7 @@
 #include <stdio.h>
 int main()
 {
+    printf("2021041055 이한결\n");
     char charType;
     int integerType;
     float floatType;
