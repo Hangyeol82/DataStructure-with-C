@@ -10,7 +10,9 @@ Copyright (c) 2025 Hangyeol Lee. All rights reserved.
 #include <string.h>
 
 #define MAX_QUEUE_SIZE 10
+#define OK 0
 #define UNDERFLOW -1
+#define OVERFLOW -2
 
 #define ENQUEUE 1
 #define DEQUEUE 2
@@ -49,15 +51,19 @@ Queue *queue = NULL;
             int id = id to enqueue
  return: void
 ------------------------------------------------------------------------------*/
-void enqueue(Queue *queue, int id, char name[])
+int enqueue(Queue *queue, int id, char name[])
 {
     if ((queue->rear + 1) % MAX_QUEUE_SIZE == queue->front) // 큐가 꽉 차있을때
-        printf("OverFlow!\n");
+    {
+        return OVERFLOW;
+    }
     else
     {
-        queue->arr[queue->rear].id = id;                // 원소 추가
-        strcpy(queue->arr[queue->rear].name, name);     // 원소 추가
+        queue->arr[queue->rear].id = id;                  // 원소 추가
+        strcpy(queue->arr[queue->rear].name, name);       // 원소 추가
         queue->rear = (queue->rear + 1) % MAX_QUEUE_SIZE; // rear + 1
+
+        return OK;
     }
 }
 
@@ -73,6 +79,7 @@ Node dequeue(Queue *queue)
     if (queue->front == queue->rear) // 큐가 비어있을때
     {
         Node underflow = {-1, "underflow"};
+
         return underflow;
     }
     else
@@ -81,12 +88,13 @@ Node dequeue(Queue *queue)
         result.id = queue->arr[queue->front].id; // 결과값 미리 저장
         strcpy(result.name, queue->arr[queue->front].name);
         queue->front = (queue->front + 1) % MAX_QUEUE_SIZE; // front + 1
+
         return result;
     }
 }
 
 /*------------------------------------------------------------------------------
- Function: 큐 안에 있는 값들을 출력하는 함수
+ Function: 큐 안에 있는 값들을 출력한다
  Interface: void print_queue()
  Parameter: Queue* queue = pointer for the queue to print
  return: void
@@ -107,9 +115,9 @@ void print_queue(Queue *queue)
 }
 
 /*------------------------------------------------------------------------------
- Function: 큐 안에 있는 값들을 출력하는 함수
- Interface: print_queue()
- Parameter: Queue *queue = pointer for the queue to initialize
+ Function: 큐를 초기화한다
+ Interface: void initialization_queue()
+ Parameter: None
  return: void
 ------------------------------------------------------------------------------*/
 void initialization_queue()
@@ -160,7 +168,14 @@ int main()
                 while (getchar() != '\n')
                     ; // 입력 버퍼 비우기
             }
-            enqueue(queue, key, name);
+            if (enqueue(queue, key, name) == OVERFLOW)
+            {
+                printf("OverFlow!\n");
+            }
+            else
+            {
+                printf("Enqueue() is complete\n");
+            }
             break;
         }
         case DEQUEUE: // 2
