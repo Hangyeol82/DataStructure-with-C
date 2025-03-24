@@ -122,7 +122,6 @@ void print_queue(Queue *queue)
 ------------------------------------------------------------------------------*/
 void initialization_queue()
 {
-    queue = (Queue *)malloc(sizeof(Queue));
     queue->front = 0;
     queue->rear = 0;
     printf("Initialization is complete\n");
