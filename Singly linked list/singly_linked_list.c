@@ -2,7 +2,7 @@
  File Name: singly_linked_list.c
  Programmed by: Hangyeol Lee
  Affiliation: Chungbuk University
- Functions: insert(), delete(), update(), retreve(), print() in singly linked list
+ Functions: insert(), delete(), update(), retrIeve(), print() in singly linked list
  Copyright (c) 2025 Hangyeol Lee. All rights reserved.
 ---------------------------------------------------------------------------------------------*/
 #include <stdio.h>
@@ -12,7 +12,7 @@
 #define INSERT 1
 #define DELETE 2
 #define UPDATE 3
-#define RETREVE 4
+#define RETRIEVE 4
 #define PRINT 5
 #define QUIT 6
 
@@ -39,7 +39,7 @@ typedef struct S_List // struct of singly linked list head
   Parameter: linked_list *list = a starting pointer for singly linked list
              int id = an inserted id
              char name[] = an inserted name
-  return: OK = if the node was successfully inserted
+  return: if the node was successfully inserted, return OK
 ----------------------------------------------------------------------------*/
 int insert(Linked_List *list, int id, char name[])
 {
@@ -83,8 +83,8 @@ int insert(Linked_List *list, int id, char name[])
  Interface: void delete()
  Parameter: Linked_list *list = a starting pointer for singly linked list
             int int = id of a node to be deleted
- return: OK = if the node was successfully deleted
-         FAIL = if the node was not found
+ return: if the node was successfully deleted, return OK
+         if the node was not found, return FAIL
 ----------------------------------------------------------------------------*/
 int delete(Linked_List *list, int id)
 {
@@ -125,22 +125,23 @@ int delete(Linked_List *list, int id)
 
 /*----------------------------------------------------------------------------
  Function: updating a name of a node with a certain id
- Interface: print_linked_list()
+ Interface: int print_linked_list()
  Parameter: Linked_list *list: a starting pointer for singly linked list
             int id: id of a node to be updated
             char name[]: name of a node to be updated
- return: OK = if the name of node was successfully updated
-         FAIL = if the list is empty or the node doesn't exist
+ return: if the name of node was successfully updated, return OK
+         if the list is empty or the node doesn't exist, return FAIL
 ----------------------------------------------------------------------------*/
 int update(Linked_List *list, int id, char name[])
 {
-    if (list->head == NULL)
+    if (list->head == NULL)     // list is empty
     {
         return FAIL;
     }
     else
     {
         Node *now_node = list->head;
+
         while (now_node->next != NULL && now_node->id != id)
         {
             now_node = now_node->next;
@@ -160,13 +161,13 @@ int update(Linked_List *list, int id, char name[])
 
 /*----------------------------------------------------------------------------
  Function: retreving a name of a node with a certain id
- Interface: print_linked_list()
+ Interface: int print_linked_list()
  Parameter: Linked_list *list: a starting pointer for singly linked list
-            int id: id of the node to be retreved
- return: OK = if the name of the node was retreved
-         FAIL = if the list is empty or the node doesn't exist
+            int id: id of the node to be retrIeved
+ return: if the name of the node was retrIeved, return OK
+         if the list is empty or the node doesn't exist, return FAIL
 ----------------------------------------------------------------------------*/
-int retreve(Linked_List *list, int id)
+int retrIeve(Linked_List *list, int id)
 {
     if (list->head == NULL)
     {
@@ -194,7 +195,7 @@ int retreve(Linked_List *list, int id)
 
 /*----------------------------------------------------------------------------
  Function: printing nodes in the singly linked list
- Interface: print_linked_list()
+ Interface: void print_linked_list()
  Parameter: Linked_list *list: a starting pointer for singly linked list
  return: void
 ----------------------------------------------------------------------------*/
@@ -211,7 +212,7 @@ void print_linked_list(Linked_List *list)
 
 /*----------------------------------------------------------------------------
  Function: free all nodes in list
- Interfaace: free_list()
+ Interfaace: void free_list()
  Parameter: Linked_list *list: a starting pointer for singly linked list
  return: void
 ----------------------------------------------------------------------------*/
@@ -250,7 +251,7 @@ int main()
         printf("                  singly linked list                         \n");
         printf("----------------------------------------------------------------\n");
         printf(" Insert        = 1           Delete        = 2 \n");
-        printf(" Update        = 3           Retreve       = 4 \n");
+        printf(" Update        = 3           RetrIeve       = 4 \n");
         printf(" Print         = 5           Quit          = 6 \n");
         printf("----------------------------------------------------------------\n");
 
@@ -356,7 +357,7 @@ int main()
             }
             break;
         }
-        case RETREVE: // 4
+        case RETRIEVE: // 4
         {
             int id;
             printf("Input Id: ");
@@ -369,7 +370,7 @@ int main()
                     ;
             }
 
-            if (retreve(list, id) == OK)
+            if (retrIeve(list, id) == OK)
             {
                 printf("Retreving is complete!\n");
             }
