@@ -1,10 +1,11 @@
-/*---------------------------------------------------------------------------------------------
+/*--------------------------------------------------------------------------
  File Name: singly_linked_list.c
  Programmed by: Hangyeol Lee
  Affiliation: Chungbuk University
- Functions: insert(), delete(), update(), retrIeve(), print() in singly linked list
+ Functions: insert(), delete(), update(),
+            retrieve(), print() in singly linked list
  Copyright (c) 2025 Hangyeol Lee. All rights reserved.
----------------------------------------------------------------------------------------------*/
+--------------------------------------------------------------------------*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,7 +35,7 @@ typedef struct S_List // struct of singly linked list head
 } Linked_List;
 
 /*----------------------------------------------------------------------------
-  Function : insert a node in the singly linked list
+  Function : insert the node in the singly linked list sorted by id
   Interface: void insert()
   Parameter: linked_list *list = a starting pointer for singly linked list
              int id = an inserted id
@@ -49,16 +50,15 @@ int insert(Linked_List *list, int id, char name[])
         printf("Menory allocation was failed in insert() \n");
         exit(1);
     }
-
     new_node->id = id;
     strcpy(new_node->name, name);
-    new_node->next = NULL;
+    new_node->next = NULL; // initialize node
 
     if (list->head == NULL) // the node of list is just one
     {
         list->head = new_node;
     }
-    else if (list->head->id > id) // inserting id is less than id of head node
+    else if (list->head->id > id) // id of new_node is less than id of head node
     {
         new_node->next = list->head;
         list->head = new_node;
@@ -134,7 +134,7 @@ int delete(Linked_List *list, int id)
 ----------------------------------------------------------------------------*/
 int update(Linked_List *list, int id, char name[])
 {
-    if (list->head == NULL)     // list is empty
+    if (list->head == NULL) // list is empty
     {
         return FAIL;
     }
@@ -160,14 +160,14 @@ int update(Linked_List *list, int id, char name[])
 }
 
 /*----------------------------------------------------------------------------
- Function: retreving a name of a node with a certain id
- Interface: int print_linked_list()
+ Function: retrieving the name of a node with a certain id
+ Interface: int retrieve()
  Parameter: Linked_list *list: a starting pointer for singly linked list
-            int id: id of the node to be retrIeved
- return: if the name of the node was retrIeved, return OK
+            int id: id of the node to be retrieved
+ return: if the name of the node was retrieved, return OK
          if the list is empty or the node doesn't exist, return FAIL
 ----------------------------------------------------------------------------*/
-int retrIeve(Linked_List *list, int id)
+int retrieve(Linked_List *list, int id)
 {
     if (list->head == NULL)
     {
@@ -176,7 +176,7 @@ int retrIeve(Linked_List *list, int id)
     else
     {
         Node *now_node = list->head;
-        while (now_node->next != NULL && now_node->id != id)
+        while (now_node->next != NULL && now_node->id != id) // finding a node with
         {
             now_node = now_node->next;
         }
@@ -251,7 +251,7 @@ int main()
         printf("                  singly linked list                         \n");
         printf("----------------------------------------------------------------\n");
         printf(" Insert        = 1           Delete        = 2 \n");
-        printf(" Update        = 3           RetrIeve       = 4 \n");
+        printf(" Update        = 3           Retrieve       = 4 \n");
         printf(" Print         = 5           Quit          = 6 \n");
         printf("----------------------------------------------------------------\n");
 
@@ -370,7 +370,7 @@ int main()
                     ;
             }
 
-            if (retrIeve(list, id) == OK)
+            if (retrieve(list, id) == OK)
             {
                 printf("Retreving is complete!\n");
             }

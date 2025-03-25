@@ -2,7 +2,8 @@
 File Name: doubly_linked_list.c
 Programmed by: Hangyeol Lee
 Affiliation: Chungbuk University
-Functions: insert(), delete(), print() in doubly linked list
+Functions: insert(), delete(), print(),
+           retrieve(), update() in doubly linked list
 Copyright (c) 2025 Hangyeol Lee. All rights reserved.
 ---------------------------------------------------------------------*/
 #include <stdio.h>
@@ -40,9 +41,9 @@ typedef struct Doubly_Linked_List // struct of Doubly linked list
  Parameters: Linked_List *list: Pointer to the doubly linked list
              int id: ID of the node to insert
              char name[]: Name of the node to insert
- Return: void
+ Return: if the inserting is complete, return OK
 ------------------------------------------------------------------------*/
-void insert(Linked_List *list, int id, char name[])
+int insert(Linked_List *list, int id, char name[])
 {
     Node *new_node = (Node *)malloc(sizeof(Node)); // node to insert
     if (new_node == NULL)
@@ -100,6 +101,7 @@ void insert(Linked_List *list, int id, char name[])
             now_node->right = new_node;
         }
     }
+    return OK;
 }
 
 /*------------------------------------------------------------------------
@@ -107,15 +109,17 @@ void insert(Linked_List *list, int id, char name[])
  Interface: void delete(Linked_List *list, int id)
  Parameters: Linked_List *list: Pointer to the doubly linked list
              int id: ID of the node to delete
- Return: void
+ Return: if the deleting is complete, return OK
+         otherwise return FAIL
 ------------------------------------------------------------------------*/
-void delete(Linked_List *list, int id)
+int delete(Linked_List *list, int id)
 {
     Node *now_node = list->head; // node for searching
 
     if (list->head == NULL) // when tree is empty
     {
         printf("Tree is empty!\n");
+        return FAIL;
     }
     else if (now_node->id == id) // 삭제할 노드가 head 노드일때
     {
@@ -143,6 +147,7 @@ void delete(Linked_List *list, int id)
             list->head = NULL;
             free(now_node);
         }
+        return OK;
     }
     else
     {
@@ -175,9 +180,13 @@ void delete(Linked_List *list, int id)
                 now_node->left->right = NULL;
                 free(now_node);
             }
+            return OK;
         }
         else
+        {
             printf("There is no such node!\n");
+            return FAIL;
+        }
     }
 }
 
@@ -296,10 +305,9 @@ void print_linked_list(Linked_List *list)
 
         while (now_node != NULL)
         {
-            printf("%d ", now_node->id);
+            printf("%d\t%s\n", now_node->id, now_node->name);
             now_node = now_node->right;
         }
-        printf("\n");
     }
 }
 
@@ -349,7 +357,7 @@ int main()
         printf("                    doubly linked list                         \n");
         printf("----------------------------------------------------------------\n");
         printf(" Insert        = 1           Delete        = 2 \n");
-        printf(" Update        = 3           RetrIeve       = 5 \n");
+        printf(" Update        = 3           RetrIeve      = 4 \n");
         printf(" Print         = 5           Quit          = 6 \n");
         printf("----------------------------------------------------------------\n");
 
@@ -390,7 +398,15 @@ int main()
                     ;
             }
 
-            insert(list, num, name);
+            if (insert(list, num, name) == OK)
+            {
+                printf("Inserting is complete\n");
+            }
+            else
+            {
+                printf("Inserting is failed\n");
+            }
+
             break;
         }
         case DELETE: // 2
@@ -407,7 +423,15 @@ int main()
                     ;
             }
 
-            delete (list, num);
+            if (delete (list, num) == OK)
+            {
+                printf("Deleting is complete\n");
+            }
+            else
+            {
+                printf("Deleting is failed\n");
+            }
+
             break;
         }
         case UPDATE: // 3
@@ -458,7 +482,7 @@ int main()
                     ;
             }
 
-            if (retrIeve(list, id) == OK)
+            if (retrieve(list, id) == OK)
             {
                 printf("Retreving is complete!\n");
             }

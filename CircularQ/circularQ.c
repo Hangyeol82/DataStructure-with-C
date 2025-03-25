@@ -49,7 +49,8 @@ Queue *queue = NULL;
  Interface: int enqueue()
  Parameter: Queue *queue = pointer for the queue to enqueue
             int id = id to enqueue
- return: void
+ return: if the queue is full, return OVERFLOW
+         otherwise return OK.
 ------------------------------------------------------------------------------*/
 int enqueue(Queue *queue, int id, char name[])
 {
@@ -133,8 +134,7 @@ int main()
     int command;
     int key;
     char name[10];
-    initialization_queue();
-
+    queue = (Queue*)malloc(sizeof(Queue));
     do
     {
         printf("----------------------------------------------------------------\n");
