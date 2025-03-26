@@ -50,6 +50,7 @@ int insert(Linked_List *list, int id, char name[])
         printf("Menory allocation was failed in insert() \n");
         exit(1);
     }
+
     new_node->id = id;
     strcpy(new_node->name, name);
     new_node->next = NULL; // initialize node
@@ -67,7 +68,8 @@ int insert(Linked_List *list, int id, char name[])
     {
         Node *now_node = list->head; // node for searching
 
-        while (now_node->next != NULL && now_node->next->id < id) // find the correct position to insert
+        while (now_node->next != NULL && now_node->next->id < id)
+        // find the correct position to insert
         {
             now_node = now_node->next;
         }
@@ -89,14 +91,14 @@ int insert(Linked_List *list, int id, char name[])
 int delete(Linked_List *list, int id)
 {
     Node *now_node = list->head; // node to serach
-    Node *previous_node = NULL;
+    Node *previous_node = NULL;  // previous node of now_node
 
     if (list->head == NULL) // list is empty
     {
         printf("List is empty!\n");
         return FAIL;
     }
-    else if (list->head->id == id) // the head node is target
+    else if (list->head->id == id) // when the head node is target
     {
         list->head = list->head->next;
         free(now_node);
@@ -104,7 +106,8 @@ int delete(Linked_List *list, int id)
     }
     else
     {
-        while (now_node->next != NULL && now_node->next->id <= id) // finding a node to delete
+        while (now_node->next != NULL && now_node->next->id <= id)
+        // finding a node to delete
         {
             previous_node = now_node;
             now_node = now_node->next;
@@ -140,18 +143,19 @@ int update(Linked_List *list, int id, char name[])
     }
     else
     {
-        Node *now_node = list->head;
+        Node *now_node = list->head; // node for searching
 
         while (now_node->next != NULL && now_node->id != id)
+        // finding a node with a certain id
         {
             now_node = now_node->next;
         }
-        if (now_node->id == id)
+        if (now_node->id == id) // the node exists
         {
             strcpy(now_node->name, name);
             return OK;
         }
-        else
+        else // the node doesn't exist
         {
             printf("There is no such node!\n");
             return FAIL;
@@ -169,23 +173,25 @@ int update(Linked_List *list, int id, char name[])
 ----------------------------------------------------------------------------*/
 int retrieve(Linked_List *list, int id)
 {
-    if (list->head == NULL)
+    if (list->head == NULL) // list is empty
     {
         return FAIL;
     }
     else
     {
-        Node *now_node = list->head;
-        while (now_node->next != NULL && now_node->id != id) // finding a node with
+        Node *now_node = list->head; // node for searching
+
+        while (now_node->next != NULL && now_node->id != id)
+        // finding a node with a certain id
         {
             now_node = now_node->next;
         }
-        if (now_node->id == id)
+        if (now_node->id == id) // the node exists
         {
             printf("Name: %s\n", now_node->name);
             return OK;
         }
-        else
+        else // the node doesn't exist
         {
             printf("There is no such node!\n");
             return FAIL;
@@ -218,9 +224,9 @@ void print_linked_list(Linked_List *list)
 ----------------------------------------------------------------------------*/
 void free_list(Linked_List *list)
 {
-    if (list->head == NULL)
+    if (list->head == NULL) // list is empty
     {
-        free(list);
+        free(list); // free struct of list
     }
     else
     {
@@ -231,10 +237,10 @@ void free_list(Linked_List *list)
         {
             previous_node = now_node;
             now_node = now_node->next;
-            free(previous_node);
+            free(previous_node); // free node of list
         }
-
-        free(list);
+        free(now_node); // free a last node
+        free(list);     // free struct of list
     }
 }
 
