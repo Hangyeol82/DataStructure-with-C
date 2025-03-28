@@ -9,7 +9,7 @@ Copyright (c) 2025 Hangyeol Lee. All rights reserved.
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_QUEUE_SIZE 10
+#define MAX_QUEUE_SIZE 5
 #define OK 0
 #define UNDERFLOW -1
 #define OVERFLOW -2
@@ -19,12 +19,12 @@ Copyright (c) 2025 Hangyeol Lee. All rights reserved.
 #define PRINT 3
 #define QUIT 4
 #define INITIALIZATION 5
+
 /*-----------------------------------------------------------------------------
 MAX_QUEUE_SIZE의 나머지로 rear와 front값을 지정하는 이유:
-'원형 큐'이므로 rear와 front 값이 MAX_QUEUE_SIZE를 넘어서면 안되기 때문
-엄밀히 말하면 MAX_QUEUE_SIZE-1를 넘어서면 안됨. 그 이유는 아래.
+'원형 큐'이므로 rear와 front 값이 MAX_QUEUE_SIZE-1를 넘어서면 안되기 때문
 -------------------------------------------------------------------------------
-full 조건 이유: front == rear가 포화인지 공백인지
+front == rear가 포화인지 공백인지
 구분하기 위해서 '최대 원소수'를 MAX_QUEUE_SIZE-1로 한다.
 즉, 원형 큐의 마지막 칸은 비워둔다.
 ------------------------------------------------------------------------------*/
@@ -47,12 +47,12 @@ Queue *queue = NULL;
 /*------------------------------------------------------------------------------
  Function: 큐에 노드를 추가하고 rear의 값에 +1 연산을 수행한다
  Interface: int enqueue()
- Parameter: Queue *queue = pointer for the queue to enqueue
-            int id = id to enqueue
+ Parameter: int id = id of the node to enqueue
+            char name[] = name of the node to enqueue
  return: if the queue is full, return OVERFLOW
          otherwise return OK.
 ------------------------------------------------------------------------------*/
-int enqueue(Queue *queue, int id, char name[])
+int enqueue(int id, char name[])
 {
     if ((queue->rear + 1) % MAX_QUEUE_SIZE == queue->front) // 큐가 꽉 차있을때
     {
@@ -69,25 +69,21 @@ int enqueue(Queue *queue, int id, char name[])
 }
 
 /*------------------------------------------------------------------------------
- Function: 큐의 front가 가르키는 노드를 출력한다
- Interface: int dequeue()
- Parameter: Queue *queue = pointer for the queue to dequeue
- return: if the queue is empty, return QUEUE_UNDERFLOW
-         otherwise return id of the first node in queue
+ Function: 큐의 front가 가르키는 노드의 주소를 리턴한다
+ Interface: Node *dequeue()
+ Parameter: None
+ return: if the queue is empty, return address of QUEUE_UNDERFLOW
+         otherwise return address of the first node in queue
 ------------------------------------------------------------------------------*/
-Node dequeue(Queue *queue)
+Node *dequeue()
 {
     if (queue->front == queue->rear) // 큐가 비어있을때
     {
-        Node underflow = {-1, "underflow"};
-
-        return underflow;
+        return (Node *)UNDERFLOW;
     }
     else
     {
-        Node result;
-        result.id = queue->arr[queue->front].id; // 결과값 미리 저장
-        strcpy(result.name, queue->arr[queue->front].name);
+        Node *result = &queue->arr[queue->front];
         queue->front = (queue->front + 1) % MAX_QUEUE_SIZE; // front + 1
 
         return result;
@@ -100,7 +96,7 @@ Node dequeue(Queue *queue)
  Parameter: Queue* queue = pointer for the queue to print
  return: void
 ------------------------------------------------------------------------------*/
-void print_queue(Queue *queue)
+void print_queue()
 {
     int size = 0; // 큐 안에 들어있는 원소의 개수를 저장할 값
     if (queue->front <= queue->rear)
@@ -132,9 +128,9 @@ void initialization_queue()
 int main()
 {
     int command;
-    int key;
+    int number;
     char name[10];
-    queue = (Queue*)malloc(sizeof(Queue));
+    queue = (Queue *)malloc(sizeof(Queue));
     do
     {
         printf("----------------------------------------------------------------\n");
@@ -144,30 +140,35 @@ int main()
         printf("----------------------------------------------------------------\n");
 
         printf("Command = ");
-        scanf(" %d", &command);
+        if (scanf("%d", &command) != 1) // 입력값이 정수가 아닐 경우
+        {
+            printf("Wrong input!\n");
+            while (getchar() != '\n')
+                ;     // 입력 버퍼 비우기
+            continue; // 다음 반복으로 넘어가기
+        }
 
         switch (command)
         {
         case ENQUEUE: // 1
         {
-            int ret = 0;
-            printf("Input number = ");
-            ret = scanf("%d", &key);
-            if (ret != 1)
+            printf("Input number = "); // number 입력 받기
+            while (scanf("%d", &number) == 0)
             {
-                printf("Wrong Input!\n");
+                printf("Wrong Input!\nInput number again = ");
+                while (getchar() != '\n')
+                    ;
+            }
+
+            printf("Input name = "); // name 입력 받기
+            while (scanf("%s", name) == 0)
+            {
+                printf("Wrong Input!\nInput name again = ");
                 while (getchar() != '\n')
                     ; // 입력 버퍼 비우기
             }
-            printf("Input name = ");
-            ret = scanf("%s", name);
-            if (ret != 1)
-            {
-                printf("Wrong Input!\n");
-                while (getchar() != '\n')
-                    ; // 입력 버퍼 비우기
-            }
-            if (enqueue(queue, key, name) == OVERFLOW)
+
+            if (enqueue(number, name) == OVERFLOW)
             {
                 printf("OverFlow!\n");
             }
@@ -179,18 +180,18 @@ int main()
         }
         case DEQUEUE: // 2
         {
-            Node result = dequeue(queue);
-            if (result.id == UNDERFLOW)
+            Node *result = dequeue();
+            if (result == (Node *)UNDERFLOW)
                 printf("UnderFlow!\n");
             else
             {
-                printf("%d\n", result.id);
-                printf("%s\n", result.name);
+                printf("%d\n", result->id);
+                printf("%s\n", result->name);
             }
             break;
         }
         case PRINT: // 3
-            print_queue(queue);
+            print_queue();
             break;
         case QUIT: // 4
             free(queue);

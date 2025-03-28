@@ -9,8 +9,8 @@ Copyright (c) 2025 Hangyeol Lee. All rights reserved.
 #include <stdlib.h>
 #include <string.h>
 
-#define STACK_OVERFLOW -1
-#define STACK_UNDERFLOW -2
+#define STACKOVERFLOW -1
+#define STACKUNDERFLOW -2
 
 #define OK 0
 #define STACK_MAXSIZE 3
@@ -31,21 +31,20 @@ STACK_NODE Stack[STACK_MAXSIZE]; // Stack
 int top = -1;                    // the top pointer's definition and initilization in Stack
 
 /*-------------------------------------------------------------------------------------
- Function: 스택에서 top이 가르키는 최상위 원소를 리턴한다
- Interface: STACK_NODE pop()
+ Function: 스택에서 top이 가르키는 최상위 원소의 주소를 리턴한다
+ Interface: STACK_NODE* pop()
  Paramete: None
- return: if error, return STACK_UNDERFLOW
-         otherwise return top node of Stack
+ return: if error, return address of STACKUNDERFLOW
+         otherwise return address of top node
 -------------------------------------------------------------------------------------*/
-STACK_NODE pop()
+STACK_NODE *pop()
 {
-    if (top == -1) // 스택의 사이즈가 0이면 언더플로우
+    if (top < 0) // 스택의 사이즈가 0이면 언더플로우
     {
-        STACK_NODE underflow = {-1, "underflow"};
-        return underflow;
+        return (STACK_NODE *)STACKUNDERFLOW;
     }
     else
-        return Stack[top--]; // top 리턴 즉, 맨 위의 스택 index 리턴
+        return &Stack[top--]; // top 리턴 즉, 맨 위의 스택 index 리턴
 }
 
 /*-------------------------------------------------------------------------------------
@@ -54,16 +53,15 @@ STACK_NODE pop()
  Parameter: int number = a student number to push
             char name[] = a name of student to push
  return:  if the pushing is complete, return OK
-          if the stack is full, return STACK_OVERFLOW
+          if the stack is full, return STACKOVERFLOW
 -------------------------------------------------------------------------------------*/
 int push(int number, char name[])
 {
-    if (top + 1 == STACK_MAXSIZE) // 스택이 꽉찼으면 오버플로우
-        return STACK_OVERFLOW;
+    if (top + 1 >= STACK_MAXSIZE) // 스택이 꽉찼으면 오버플로우
+        return STACKOVERFLOW;
     else
     {
-        top++; // top + 1
-        Stack[top].number = number;
+        Stack[++top].number = number;
         strcpy(Stack[top].name, name); // push할 변수 초기화
         return OK;
     }
@@ -77,7 +75,7 @@ int push(int number, char name[])
 -------------------------------------------------------------------------------------*/
 void print_stack()
 {
-    if (top == -1) // 스택이 비어있을때
+    if (top <= -1) // 스택이 비어있을때
         printf("Stack is Empty!\n");
     else
     {
@@ -117,37 +115,46 @@ int main()
         printf("----------------------------------------------------------------\n");
 
         printf("Command = ");
-        scanf("%d", &command);
+
+        /*
+             scanf()의 리턴값:
+               - 양의 정수 (1, 2, 3...) : 형식에 맞기 입력받은 항목의 개수
+               - 0 : 형식에 맞지 않은 입력
+               - EOF(-1) : 입력 스트림이 종료됨
+        */
+
+        if (scanf("%d", &command) != 1) // 입력값이 정수가 아닐 경우
+        {
+            printf("Wrong input!\n");
+            while (getchar() != '\n');     // 입력 버퍼 비우기
+            continue; // 다음 반복으로 넘어가기
+        }
 
         switch (command)
         {
         case PUSH: // 1
         {
-            int number = 0;
+            int number;
             char name[10];
-            int ret = 0;
+            int ret;
 
-            printf("Input number = ");
-            ret = scanf("%d", &number);
-            if (ret != 1)
+            printf("Input number = "); // id 입력 받기
+            while (scanf("%d", &number) == 0)
             {
-                printf("Wrong Input!\n");
+                printf("Wrong Input!\nInput number again = ");
                 while (getchar() != '\n')
                     ; // 입력 버퍼 비우기
-                break;
             }
 
-            printf("Input name = ");
-            ret = scanf("%s", name);
-            if (ret != 1)
+            printf("Input name = "); // name 입력 받기
+            while (scanf("%s", name) == 0)
             {
-                printf("Wrong Input!\n");
+                printf("Wrong Input!\nInput name again = ");
                 while (getchar() != '\n')
                     ; // 입력 버퍼 비우기
-                break;
             }
 
-            if (push(number, name) == STACK_OVERFLOW)
+            if (push(number, name) == STACKOVERFLOW)
             {
                 printf("Stack OverFlow!\n");
             }
@@ -155,15 +162,15 @@ int main()
         }
         case POP: // 2
         {
-            STACK_NODE result = pop(); // 리턴 받은 인덱스 result에 저장
-            if (result.number == STACK_UNDERFLOW)
+            STACK_NODE *result = pop(); // 리턴 받은 인덱스 result에 저장
+            if (result == (STACK_NODE *)STACKUNDERFLOW)
             {
                 printf("Stack UnderFlow!\n");
             }
             else
             {
-                printf("%d\n", result.number);
-                printf("%s\n", result.name); // 인덱스에 해당하는 값 출력
+                printf("%d\n", result->number);
+                printf("%s\n", result->name); // 인덱스에 해당하는 값 출력
             }
             break;
         }
