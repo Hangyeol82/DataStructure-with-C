@@ -126,7 +126,8 @@ int main()
         if (scanf("%d", &command) != 1) // 입력값이 정수가 아닐 경우
         {
             printf("Wrong input!\n");
-            while (getchar() != '\n');     // 입력 버퍼 비우기
+            while (getchar() != '\n')
+                ;     // 입력 버퍼 비우기
             continue; // 다음 반복으로 넘어가기
         }
 
@@ -157,6 +158,10 @@ int main()
             if (push(number, name) == STACKOVERFLOW)
             {
                 printf("Stack OverFlow!\n");
+            }
+            else
+            {
+                printf("push() is complete!\n");
             }
             break;
         }

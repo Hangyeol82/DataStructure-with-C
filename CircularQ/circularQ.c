@@ -93,7 +93,7 @@ Node *dequeue()
 /*------------------------------------------------------------------------------
  Function: 큐 안에 있는 값들을 출력한다
  Interface: void print_queue()
- Parameter: Queue* queue = pointer for the queue to print
+ Parameter: None
  return: void
 ------------------------------------------------------------------------------*/
 void print_queue()
