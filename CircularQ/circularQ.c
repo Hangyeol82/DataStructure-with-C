@@ -172,10 +172,6 @@ int main()
             {
                 printf("OverFlow!\n");
             }
-            else
-            {
-                printf("Enqueue() is complete\n");
-            }
             break;
         }
         case DEQUEUE: // 2
