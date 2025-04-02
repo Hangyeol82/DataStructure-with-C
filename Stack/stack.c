@@ -11,7 +11,6 @@ Copyright (c) 2025 Hangyeol Lee. All rights reserved.
 
 #define STACKOVERFLOW -1
 #define STACKUNDERFLOW -2
-
 #define OK 0
 #define STACK_MAXSIZE 3
 

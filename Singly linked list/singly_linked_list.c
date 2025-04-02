@@ -14,11 +14,11 @@
 #define DELETE 2
 #define UPDATE 3
 #define RETRIEVE 4
-#define PRINT 5
-#define QUIT 6
+#define INITIALIZE 5
+#define PRINT 6
+#define QUIT 7
 
 #define MAX_NAME 10
-
 #define OK 1
 #define FAIL 0
 
@@ -34,15 +34,16 @@ typedef struct S_List // struct of singly linked list head
     Node *head;
 } Linked_List;
 
+Linked_List *list;
+
 /*----------------------------------------------------------------------------
   Function : insert the node in the singly linked list sorted by id
-  Interface: void insert()
-  Parameter: linked_list *list = a starting pointer for singly linked list
-             int id = an inserted id
+  Interface: void insert(int id, char name[])
+  Parameter: int id = an inserted id
              char name[] = an inserted name
   return: if the node was successfully inserted, return OK
 ----------------------------------------------------------------------------*/
-int insert(Linked_List *list, int id, char name[])
+int insert(int id, char name[])
 {
     Node *new_node = (Node *)malloc(sizeof(Node)); // new node to insert
     if (new_node == NULL)
@@ -82,13 +83,12 @@ int insert(Linked_List *list, int id, char name[])
 
 /*----------------------------------------------------------------------------
  Function: deleting a node in the singly linked list
- Interface: void delete()
- Parameter: Linked_list *list = a starting pointer for singly linked list
-            int int = id of a node to be deleted
+ Interface: int delete(int id)
+ Parameter: int int = id of a node to be deleted
  return: if the node was successfully deleted, return OK
          if the node was not found, return FAIL
 ----------------------------------------------------------------------------*/
-int delete(Linked_List *list, int id)
+int delete(int id)
 {
     Node *now_node = list->head; // node to serach
     Node *previous_node = NULL;  // previous node of now_node
@@ -106,7 +106,7 @@ int delete(Linked_List *list, int id)
     }
     else
     {
-        while (now_node->next != NULL && now_node->next->id <= id)
+        while (now_node->next != NULL && now_node->id < id)
         // finding a node to delete
         {
             previous_node = now_node;
@@ -121,6 +121,7 @@ int delete(Linked_List *list, int id)
         }
         else
         {
+            printf("Target doesn't exist!\n");
             return FAIL;
         }
     }
@@ -128,14 +129,13 @@ int delete(Linked_List *list, int id)
 
 /*----------------------------------------------------------------------------
  Function: updating a name of a node with a certain id
- Interface: int print_linked_list()
- Parameter: Linked_list *list: a starting pointer for singly linked list
-            int id: id of a node to be updated
+ Interface: int print_linked_list(int id, char name[])
+ Parameter: int id: id of a node to be updated
             char name[]: name of a node to be updated
  return: if the name of node was successfully updated, return OK
          if the list is empty or the node doesn't exist, return FAIL
 ----------------------------------------------------------------------------*/
-int update(Linked_List *list, int id, char name[])
+int update(int id, char name[])
 {
     if (list->head == NULL) // list is empty
     {
@@ -165,16 +165,16 @@ int update(Linked_List *list, int id, char name[])
 
 /*----------------------------------------------------------------------------
  Function: retrieving the name of a node with a certain id
- Interface: int retrieve()
- Parameter: Linked_list *list: a starting pointer for singly linked list
-            int id: id of the node to be retrieved
+ Interface: int retrieve(int id)
+ Parameter: int id: id of the node to be retrieved
  return: if the name of the node was retrieved, return OK
          if the list is empty or the node doesn't exist, return FAIL
 ----------------------------------------------------------------------------*/
-int retrieve(Linked_List *list, int id)
+int retrieve(int id)
 {
     if (list->head == NULL) // list is empty
     {
+        printf("List is empty!\n");
         return FAIL;
     }
     else
@@ -202,13 +202,14 @@ int retrieve(Linked_List *list, int id)
 /*----------------------------------------------------------------------------
  Function: printing nodes in the singly linked list
  Interface: void print_linked_list()
- Parameter: Linked_list *list: a starting pointer for singly linked list
+ Parameter: None
  return: void
 ----------------------------------------------------------------------------*/
-void print_linked_list(Linked_List *list)
+void print_linked_list()
 {
     Node *now_node = list->head;
-
+    if (now_node == NULL)
+        printf("List is empty!\n");
     while (now_node != NULL)
     {
         printf("%d\t %s\n", now_node->id, now_node->name);
@@ -219,10 +220,10 @@ void print_linked_list(Linked_List *list)
 /*----------------------------------------------------------------------------
  Function: free all nodes in list
  Interfaace: void free_list()
- Parameter: Linked_list *list: a starting pointer for singly linked list
+ Parameter: None
  return: void
 ----------------------------------------------------------------------------*/
-void free_list(Linked_List *list)
+void free_list()
 {
     if (list->head == NULL) // list is empty
     {
@@ -244,32 +245,57 @@ void free_list(Linked_List *list)
     }
 }
 
+/*----------------------------------------------------------------------------
+ Function: initialize the singly linked list
+ Interfaace: void initialize_list()
+ Parameter: None
+ return: void
+----------------------------------------------------------------------------*/
+void initialize_list()
+{
+    Node *now_node = list->head;
+    Node *previous_node = NULL;
+
+    while (now_node->next != NULL)
+    {
+        previous_node = now_node;
+        now_node = now_node->next;
+        free(previous_node); // free node of list
+    }
+
+    free(now_node);    // free a last node
+    list->head = NULL; // initialize
+
+    printf("Initializing is complete!\n");
+}
+
 /* linked list simulator */
 int main()
 {
-    Linked_List *list = (Linked_List *)malloc(sizeof(Linked_List));
+    list = (Linked_List *)malloc(sizeof(Linked_List));
     list->head = NULL;
     int command;
     int ret; // scanf에 잘못 입력됨을 확인하는 변수
+
     do
     {
         printf("----------------------------------------------------------------\n");
-        printf("                  singly linked list                         \n");
+        printf("                     singly linked list                         \n");
         printf("----------------------------------------------------------------\n");
-        printf(" Insert        = 1           Delete        = 2 \n");
-        printf(" Update        = 3           Retrieve       = 4 \n");
-        printf(" Print         = 5           Quit          = 6 \n");
+        printf(" Insert         = 1           Delete         = 2 \n");
+        printf(" Update         = 3           Retrieve       = 4 \n");
+        printf(" Initialize     = 5           Print          = 6 \n");
+        printf(" Quit           = 7 \n");
         printf("----------------------------------------------------------------\n");
 
         printf("Command = ");
-        ret = scanf("%d", &command);
-        if (ret != 1)
+        while (scanf("%d", &command) != 1) // 입력값이 정수가 아닐 경우
         {
-            printf("Wrong Input!\n");
+            printf("Wrong Input!\nInput command again = ");
             while (getchar() != '\n')
-                ;
-            continue;
+                ; // 입력 버퍼 비우기
         }
+
         switch (command)
         {
         case INSERT: // 1
@@ -278,22 +304,22 @@ int main()
             char name[10];
 
             printf("Input id: ");
-            ret = scanf("%d", &id);
-            if (ret != 1)
+            while (scanf("%d", &id) != 1) // 입력값이 정수가 아닐 경우
             {
-                printf("Wrong Input!\n");
+                printf("Wrong Input!\nInput id again = ");
                 while (getchar() != '\n')
-                    ;
+                    ; // 입력 버퍼 비우기
             }
+
             printf("Input Name: ");
-            ret = scanf("%s", name);
-            if (ret != 1)
+            while (scanf("%s", name) != 1) // 입력값이 문자열이 아닐 경우
             {
-                printf("Wrong Input!\n");
+                printf("Wrong Input!\nInput name again = ");
                 while (getchar() != '\n')
-                    ;
+                    ; // 입력 버퍼 비우기
             }
-            if (insert(list, id, name) == OK)
+
+            if (insert(id, name) == OK)
             {
                 printf("Inserting is complete!\n");
             }
@@ -308,18 +334,16 @@ int main()
             int id;
 
             printf("Input Id: ");
-            ret = scanf("%d", &id);
-
-            if (ret != 1)
+            while (scanf("%d", &id) != 1) // 입력값이 정수가 아닐 경우
             {
-                printf("Wrong Input!\n");
+                printf("Wrong Input!\nInput id again = ");
                 while (getchar() != '\n')
-                    ;
+                    ; // 입력 버퍼 비우기
             }
 
-            if (delete (list, id) == OK)
+            if (delete (id) == OK)
             {
-                printf("Deleting is compelte!\n");
+                printf("Deleting is complete!\n");
             }
             else
             {
@@ -334,26 +358,22 @@ int main()
             char name[10];
 
             printf("Input id: ");
-            ret = scanf("%d", &id);
-
-            if (ret != 1)
+            while (scanf("%d", &id) != 1) // 입력값이 정수가 아닐 경우
             {
-                printf("Wrong Input!\n");
+                printf("Wrong Input!\nInput id again = ");
                 while (getchar() != '\n')
-                    ;
+                    ; // 입력 버퍼 비우기
             }
 
             printf("Input Name: ");
-            ret = scanf("%s", name);
-
-            if (ret != 1)
+            while (scanf("%s", name) != 1) // 입력값이 문자열이 아닐 경우
             {
-                printf("Wrong Input!\n");
+                printf("Wrong Input!\nInput name again = ");
                 while (getchar() != '\n')
-                    ;
+                    ; // 입력 버퍼 비우기
             }
 
-            if (update(list, id, name) == OK)
+            if (update(id, name) == OK)
             {
                 printf("Updating is complete!\n");
             }
@@ -366,36 +386,38 @@ int main()
         case RETRIEVE: // 4
         {
             int id;
-            printf("Input Id: ");
 
-            ret = scanf("%d", &id);
-            if (ret != 1)
+            printf("Input Id: ");
+            while (scanf("%d", &id) != 1) // 입력값이 정수가 아닐 경우
             {
-                printf("Wrong Input!\n");
+                printf("Wrong Input!\nInput id again = ");
                 while (getchar() != '\n')
-                    ;
+                    ; // 입력 버퍼 비우기
             }
 
-            if (retrieve(list, id) == OK)
+            if (retrieve(id) == OK)
             {
-                printf("Retreving is complete!\n");
+                printf("Retrieving is complete!\n");
             }
             else
             {
-                printf("Retreving is failed\n");
+                printf("Retrieving is failed\n");
             }
 
             break;
         }
-        case PRINT: // 5
-            print_linked_list(list);
+        case INITIALIZE: // 5
+            initialize_list();
             break;
-        case QUIT: // 6
-            free_list(list);
+        case PRINT: // 6
+            print_linked_list();
+            break;
+        case QUIT: // 7
+            free_list();
             break;
         default:
             printf("\n       >>>>>   Concentration!!   <<<<<      \n");
             break;
         }
-    } while (command != 6);
+    } while (command != QUIT);
 }
