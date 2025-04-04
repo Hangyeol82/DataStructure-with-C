@@ -4,6 +4,7 @@ Programmed by: Hangyeol Lee
 Affiliation: Chungbuk University
 Functions: push(), pop(), print() in stack
 Copyright (c) 2025 Hangyeol Lee. All rights reserved.
+Date: 2025.03.31
 ---------------------------------------------------------------------------------*/
 #include <stdio.h>
 #include <stdlib.h>

@@ -4,6 +4,7 @@ Programmed by: Hangyeol Lee
 Affiliation: Chungbuk University
 Functions: enqueue(), dequeue(), print() in circluarQ
 Copyright (c) 2025 Hangyeol Lee. All rights reserved.
+Date: 2025.03.31
 ------------------------------------------------------------------------------*/
 #include <stdio.h>
 #include <stdlib.h>

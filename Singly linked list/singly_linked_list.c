@@ -327,6 +327,7 @@ int main()
             {
                 printf("Inserting is failed\n");
             }
+            print_linked_list();
             break;
         }
         case DELETE: // 2
