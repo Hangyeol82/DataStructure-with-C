@@ -29,12 +29,7 @@ typedef struct S_Node // struct of singly linked list node
     struct S_Node *next;
 } Node;
 
-typedef struct S_List // struct of singly linked list head
-{
-    Node *head;
-} Linked_List;
-
-Linked_List *list;
+Node *list = NULL;
 
 /*----------------------------------------------------------------------------
   Function : insert the node in the singly linked list sorted by id
@@ -51,33 +46,33 @@ int insert(int id, char name[])
         printf("Menory allocation was failed in insert() \n");
         exit(1);
     }
-
     new_node->id = id;
-    strcpy(new_node->name, name);
-    new_node->next = NULL; // initialize node
+    strcpy(new_node->name, name); // initialize node
 
-    if (list->head == NULL) // the node of list is just one
+    if (list->next == NULL) // in case of empty
     {
-        list->head = new_node;
+        list->next = new_node;
+        new_node->next = NULL;
     }
-    else if (list->head->id > id) // id of new_node is less than id of head node
+    else if (list->next->id > id) // in case of the first node
     {
-        new_node->next = list->head;
-        list->head = new_node;
+        new_node->next = list->next;
+        list->next = new_node;
     }
-    else
+    else // in case of the middle or end node
     {
-        Node *now_node = list->head; // node for searching
+        Node *cur = list->next; // node for searching
 
-        while (now_node->next != NULL && now_node->next->id < id)
+        while (cur->next != NULL && cur->next->id < id)
         // find the correct position to insert
         {
-            now_node = now_node->next;
+            cur = cur->next;
         }
 
-        new_node->next = now_node->next;
-        now_node->next = new_node;
+        new_node->next = cur->next;
+        cur->next = new_node;
     }
+
     return OK;
 }
 
@@ -85,46 +80,42 @@ int insert(int id, char name[])
  Function: deleting a node in the singly linked list
  Interface: int delete(int id)
  Parameter: int int = id of a node to be deleted
- return: if the node was successfully deleted, return OK
-         if the node was not found, return FAIL
+ return: if delete() is done, return OK
 ----------------------------------------------------------------------------*/
 int delete(int id)
 {
-    Node *now_node = list->head; // node to serach
-    Node *previous_node = NULL;  // previous node of now_node
+    Node *cur = list->next; // node for seraching
+    Node *pre = NULL;       // previous node of cur
 
-    if (list->head == NULL) // list is empty
+    if (list->next == NULL) // in case of empty
     {
         printf("List is empty!\n");
-        return FAIL;
     }
-    else if (list->head->id == id) // when the head node is target
+    else if (list->next->id == id) // when the head node is target
     {
-        list->head = list->head->next;
-        free(now_node);
-        return OK;
+        list->next = list->next->next;
+        free(cur);
     }
-    else
+    else // in case of the middle or end node
     {
-        while (now_node->next != NULL && now_node->id < id)
+        while (cur->next != NULL && cur->id < id)
         // finding a node to delete
         {
-            previous_node = now_node;
-            now_node = now_node->next;
+            pre = cur;
+            cur = cur->next;
         }
 
-        if (now_node->id == id) // target exists
+        if (cur->id == id) // target exists
         {
-            previous_node->next = now_node->next;
-            free(now_node);
-            return OK;
+            pre->next = cur->next;
+            free(cur);
         }
         else
         {
             printf("Target doesn't exist!\n");
-            return FAIL;
         }
     }
+    return OK;
 }
 
 /*----------------------------------------------------------------------------
@@ -132,71 +123,66 @@ int delete(int id)
  Interface: int print_linked_list(int id, char name[])
  Parameter: int id: id of a node to be updated
             char name[]: name of a node to be updated
- return: if the name of node was successfully updated, return OK
-         if the list is empty or the node doesn't exist, return FAIL
+ return: if update() is done, return OK
 ----------------------------------------------------------------------------*/
 int update(int id, char name[])
 {
-    if (list->head == NULL) // list is empty
+    if (list->next == NULL) // in case of empty
     {
-        return FAIL;
+        printf("List is empty!\n");
     }
     else
     {
-        Node *now_node = list->head; // node for searching
+        Node *cur = list->next; // node for searching
 
-        while (now_node->next != NULL && now_node->id != id)
+        while (cur->next != NULL && cur->id != id)
         // finding a node with a certain id
         {
-            now_node = now_node->next;
+            cur = cur->next;
         }
-        if (now_node->id == id) // the node exists
+        if (cur->id == id) // the node exists
         {
-            strcpy(now_node->name, name);
-            return OK;
+            strcpy(cur->name, name);
         }
         else // the node doesn't exist
         {
             printf("There is no such node!\n");
-            return FAIL;
         }
     }
+    return OK;
 }
 
 /*----------------------------------------------------------------------------
  Function: retrieving the name of a node with a certain id
  Interface: int retrieve(int id)
  Parameter: int id: id of the node to be retrieved
- return: if the name of the node was retrieved, return OK
-         if the list is empty or the node doesn't exist, return FAIL
+ return: if retrieve() is done, return OK
 ----------------------------------------------------------------------------*/
 int retrieve(int id)
 {
-    if (list->head == NULL) // list is empty
+    if (list->next == NULL) // list is empty
     {
         printf("List is empty!\n");
-        return FAIL;
     }
     else
     {
-        Node *now_node = list->head; // node for searching
+        Node *cur = list->next; // node for searching
 
-        while (now_node->next != NULL && now_node->id != id)
+        while (cur->next != NULL && cur->id != id)
         // finding a node with a certain id
         {
-            now_node = now_node->next;
+            cur = cur->next;
         }
-        if (now_node->id == id) // the node exists
+        if (cur->id == id) // the node exists
         {
-            printf("Name: %s\n", now_node->name);
-            return OK;
+            printf("Name: %s\n", cur->name);
         }
         else // the node doesn't exist
         {
             printf("There is no such node!\n");
-            return FAIL;
         }
     }
+    return OK;
 }
 
 /*----------------------------------------------------------------------------
@@ -207,13 +193,13 @@ int retrieve(int id)
 ----------------------------------------------------------------------------*/
 void print_linked_list()
 {
-    Node *now_node = list->head;
-    if (now_node == NULL)
+    Node *cur = list->next;
+    if (cur == NULL)
         printf("List is empty!\n");
-    while (now_node != NULL)
+    while (cur != NULL)
     {
-        printf("%d\t %s\n", now_node->id, now_node->name);
-        now_node = now_node->next;
+        printf("%d\t %s\n", cur->id, cur->name);
+        cur = cur->next;
     }
 }
 
@@ -225,23 +211,23 @@ void print_linked_list()
 ----------------------------------------------------------------------------*/
 void free_list()
 {
-    if (list->head == NULL) // list is empty
+    if (list->next == NULL) // list is empty
     {
         free(list); // free struct of list
     }
     else
     {
-        Node *now_node = list->head;
-        Node *previous_node = NULL;
+        Node *cur = list->next;
+        Node *pre = NULL;
 
-        while (now_node->next != NULL)
+        while (cur->next != NULL)
         {
-            previous_node = now_node;
-            now_node = now_node->next;
-            free(previous_node); // free node of list
+            pre = cur;
+            cur = cur->next;
+            free(pre); // free node of list
         }
-        free(now_node); // free a last node
-        free(list);     // free struct of list
+        free(cur);  // free a last node
+        free(list); // free struct of list
     }
 }
 
@@ -253,27 +239,27 @@ void free_list()
 ----------------------------------------------------------------------------*/
 void initialize_list()
 {
-    Node *now_node = list->head;
-    Node *previous_node = NULL;
+    Node *cur = list->next;
+    Node *pre = NULL;
 
-    while (now_node->next != NULL)
+    while (cur->next != NULL)
     {
-        previous_node = now_node;
-        now_node = now_node->next;
-        free(previous_node); // free node of list
+        pre = cur;
+        cur = cur->next;
+        free(pre); // free node of list
     }
 
-    free(now_node);    // free a last node
-    list->head = NULL; // initialize
+    free(cur);         // free a last node
+    list->next = NULL; // initialize
 
-    printf("Initializing is complete!\n");
+    printf("Initializing is done!\n");
 }
 
 /* linked list simulator */
 int main()
 {
-    list = (Linked_List *)malloc(sizeof(Linked_List));
-    list->head = NULL;
+    list = (Node *)malloc(sizeof(Node));
+    list->next = NULL;
     int command;
     int ret; // scanf에 잘못 입력됨을 확인하는 변수
 
@@ -321,7 +307,7 @@ int main()
 
             if (insert(id, name) == OK)
             {
-                printf("Inserting is complete!\n");
+                printf("Inserting is done!\n");
             }
             else
             {
@@ -344,11 +330,11 @@ int main()
 
             if (delete (id) == OK)
             {
-                printf("Deleting is complete!\n");
+                printf("Delete() is done!\n");
             }
             else
             {
-                printf("Deleting is failed!\n");
+                printf("Delete() is failed!\n");
             }
 
             break;
@@ -376,11 +362,11 @@ int main()
 
             if (update(id, name) == OK)
             {
-                printf("Updating is complete!\n");
+                printf("Update() is done!\n");
             }
             else
             {
-                printf("Updating is failed\n");
+                printf("Update() is failed\n");
             }
             break;
         }
@@ -398,11 +384,11 @@ int main()
 
             if (retrieve(id) == OK)
             {
-                printf("Retrieving is complete!\n");
+                printf("Retrieve() is done!\n");
             }
             else
             {
-                printf("Retrieving is failed\n");
+                printf("Retrieve() is failed\n");
             }
 
             break;
