@@ -62,15 +62,23 @@ int insert(int id, char name[])
     else // in case of the middle or end node
     {
         Node *cur = list->next; // node for searching
+        Node *pre = NULL; // previous node
 
-        while (cur->next != NULL && cur->next->id < id)
-        // find the correct position to insert
+        for (; cur != NULL; pre = cur, cur = cur->next)
+        // in case of the middle location
         {
-            cur = cur->next;
+            if (cur->id > id)
+            {
+                pre->next = new_node;
+                new_node->next = cur;
+                break;
+            }
         }
-
-        new_node->next = cur->next;
-        cur->next = new_node;
+        if (cur == NULL) // in case of the end location
+        {
+            pre->next = new_node;
+            new_node->next = NULL;
+        }
     }
 
     return OK;
@@ -79,43 +87,45 @@ int insert(int id, char name[])
 /*----------------------------------------------------------------------------
  Function: deleting a node in the singly linked list
  Interface: int delete(int id)
- Parameter: int int = id of a node to be deleted
- return: if delete() is done, return OK
+ Parameter: int id = id of a node to be deleted
+ return: void
 ----------------------------------------------------------------------------*/
-int delete(int id)
+void delete(int id)
 {
-    Node *cur = list->next; // node for seraching
-    Node *pre = NULL;       // previous node of cur
-
     if (list->next == NULL) // in case of empty
     {
         printf("List is empty!\n");
     }
     else if (list->next->id == id) // when the head node is target
     {
-        list->next = list->next->next;
-        free(cur);
+        Node *target = list->next;
+        list->next = target->next;
+        free(target);
+        printf("Deleting is complete!\n");
     }
     else // in case of the middle or end node
     {
-        while (cur->next != NULL && cur->id < id)
+        Node *cur; // node for seraching
+        Node *pre; // previous node of cur
+
+        for (pre = list->next, cur = pre->next; cur != NULL; pre = cur, cur = cur->next)
         // finding a node to delete
         {
-            pre = cur;
-            cur = cur->next;
+            if (cur->id >= id)
+            {
+                break;
+            }
         }
-
         if (cur->id == id) // target exists
         {
-            pre->next = cur->next;
             free(cur);
+            printf("Deleting is complete!\n");
         }
-        else
+        if (cur == NULL) // target doesn't exist
         {
             printf("Target doesn't exist!\n");
         }
     }
-    return OK;
 }
 
 /*----------------------------------------------------------------------------
@@ -123,9 +133,9 @@ int delete(int id)
  Interface: int print_linked_list(int id, char name[])
  Parameter: int id: id of a node to be updated
             char name[]: name of a node to be updated
- return: if update() is done, return OK
+ return: void
 ----------------------------------------------------------------------------*/
-int update(int id, char name[])
+void update(int id, char name[])
 {
     if (list->next == NULL) // in case of empty
     {
@@ -133,32 +143,34 @@ int update(int id, char name[])
     }
     else
     {
-        Node *cur = list->next; // node for searching
+        Node *cur; // node for searching
 
-        while (cur->next != NULL && cur->id != id)
-        // finding a node with a certain id
+        for (cur = list->next; cur != NULL; cur = cur->next)
         {
-            cur = cur->next;
+            if (cur->id >= id)
+            {
+                break;
+            }
         }
-        if (cur->id == id) // the node exists
+        if (cur->id == id)
         {
             strcpy(cur->name, name);
+            printf("Updating is complete!\n");
         }
-        else // the node doesn't exist
+        else
         {
             printf("There is no such node!\n");
         }
     }
-    return OK;
 }
 
 /*----------------------------------------------------------------------------
  Function: retrieving the name of a node with a certain id
  Interface: int retrieve(int id)
  Parameter: int id: id of the node to be retrieved
- return: if retrieve() is done, return OK
+ return: void
 ----------------------------------------------------------------------------*/
-int retrieve(int id)
+void retrieve(int id)
 {
     if (list->next == NULL) // list is empty
     {
@@ -166,23 +178,23 @@ int retrieve(int id)
     }
     else
     {
-        Node *cur = list->next; // node for searching
+        Node *cur; // node for searching
 
-        while (cur->next != NULL && cur->id != id)
-        // finding a node with a certain id
+        for (cur = list->next; cur != NULL; cur = cur->next)
         {
-            cur = cur->next;
+            if (cur->id >= id)
+            {
+                break;
+            }
         }
-        if (cur->id == id) // the node exists
-        {
+        if( cur -> id == id){
             printf("Name: %s\n", cur->name);
         }
-        else // the node doesn't exist
+        else
         {
             printf("There is no such node!\n");
         }
     }
-    return OK;
 }
 
 /*----------------------------------------------------------------------------
@@ -196,10 +208,9 @@ void print_linked_list()
     Node *cur = list->next;
     if (cur == NULL)
         printf("List is empty!\n");
-    while (cur != NULL)
+    for (cur = list->next; cur != NULL; cur = cur->next)
     {
-        printf("%d\t %s\n", cur->id, cur->name);
-        cur = cur->next;
+        printf("Name: %s\n", cur->name);
     }
 }
 
@@ -220,11 +231,11 @@ void free_list()
         Node *cur = list->next;
         Node *pre = NULL;
 
-        while (cur->next != NULL)
+        for (cur = list->next; cur != NULL; cur = cur->next)
         {
             pre = cur;
             cur = cur->next;
-            free(pre); // free node of list
+            free(pre);
         }
         free(cur);  // free a last node
         free(list); // free struct of list
@@ -242,11 +253,11 @@ void initialize_list()
     Node *cur = list->next;
     Node *pre = NULL;
 
-    while (cur->next != NULL)
+    for (cur = list->next; cur != NULL; cur = cur->next)
     {
         pre = cur;
         cur = cur->next;
-        free(pre); // free node of list
+        free(pre);
     }
 
     free(cur);         // free a last node
@@ -327,15 +338,7 @@ int main()
                 while (getchar() != '\n')
                     ; // 입력 버퍼 비우기
             }
-
-            if (delete (id) == OK)
-            {
-                printf("Delete() is done!\n");
-            }
-            else
-            {
-                printf("Delete() is failed!\n");
-            }
+            delete (id);
 
             break;
         }
@@ -360,14 +363,8 @@ int main()
                     ; // 입력 버퍼 비우기
             }
 
-            if (update(id, name) == OK)
-            {
-                printf("Update() is done!\n");
-            }
-            else
-            {
-                printf("Update() is failed\n");
-            }
+            update(id, name);
+
             break;
         }
         case RETRIEVE: // 4
@@ -382,14 +379,7 @@ int main()
                     ; // 입력 버퍼 비우기
             }
 
-            if (retrieve(id) == OK)
-            {
-                printf("Retrieve() is done!\n");
-            }
-            else
-            {
-                printf("Retrieve() is failed\n");
-            }
+            retrieve(id);
 
             break;
         }
