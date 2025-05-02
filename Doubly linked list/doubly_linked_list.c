@@ -64,7 +64,7 @@ int insert(int id, char name[])
     {
         list->head = new_node;
     }
-    else if (id < cur->id) // 왼쪽으로 탐색, head의 id보다 작을때
+    else if (id < list->head->id) // 왼쪽으로 탐색, head의 id보다 작을때
     {
         for (cur = list->head; cur->left != NULL; cur = cur->left)
         // 삽입할 위치를 찾을때까지
@@ -124,7 +124,7 @@ int insert(int id, char name[])
 ------------------------------------------------------------------------*/
 void delete(int id)
 {
-    Node *cur; // node for searching
+    Node *cur = list->head; // node for searching
 
     if (list->head == NULL) // when list is empty
     {
@@ -349,16 +349,17 @@ void print_linked_list()
 void free_list(Linked_List *list)
 {
     Node *tmp;                        // Free할 노드
-    Node *r_side = list->head->right; // 오른쪽 탐색할 노드
-    Node *l_side = list->head->left;  // 왼쪽 탐색할 노드
-
+    
     if (list->head == NULL) // list가 비어있을때
     {
         free(list);
     }
     else
     {
+        Node *r_side = list->head->right; // 오른쪽 탐색할 노드
+        Node *l_side = list->head->left;  // 왼쪽 탐색할 노드
         // 왼쪽 리스트 free
+        
         for (tmp = NULL; l_side != NULL; tmp = l_side, l_side = l_side->left)
         {
             free(tmp);
@@ -382,26 +383,31 @@ void free_list(Linked_List *list)
 ------------------------------------------------------------------------*/
 void initialize_list()
 {
-    Node *tmp;                        // Free할 노드
-    Node *r_side = list->head->right; // 오른쪽 탐색할 노드
-    Node *l_side = list->head->left;  // 왼쪽 탐색할 노드
-
-    // 왼쪽 리스트 free
-    for (tmp = NULL; l_side != NULL; tmp = l_side, l_side = l_side->left)
+    if (list->head == NULL)
     {
-        free(tmp);
+        printf("List is already empty!\n");
     }
-    // 오른쪽 리스트 free
-    for (tmp = NULL; r_side != NULL; tmp = r_side, r_side = r_side->right)
+    else
     {
-        free(tmp);
+        Node *tmp;
+        Node *l_side = list->head->left;
+        Node *r_side = list->head->right;
+        
+        for (tmp = NULL; l_side != NULL; tmp = l_side, l_side = l_side->left)
+        {
+            free(tmp);
+        }
+    
+        for (tmp = NULL; r_side != NULL; tmp = r_side, r_side = r_side->right)
+        {
+            free(tmp);
+        }
+    
+        free(list->head);
+        list->head = NULL;
+    
+        printf("Initializing is complete!\n");
     }
-    // head 노드 Free
-    free(list->head);
-
-    list->head = NULL;
-
-    printf("Initializing is complete!\n");
 }
 
 int main()
