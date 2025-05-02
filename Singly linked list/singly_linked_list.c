@@ -62,7 +62,7 @@ int insert(int id, char name[])
     else // in case of the middle or end node
     {
         Node *cur = list->next; // node for searching
-        Node *pre = NULL; // previous node
+        Node *pre = NULL;       // previous node
 
         for (; cur != NULL; pre = cur, cur = cur->next)
         // in case of the middle location
@@ -116,14 +116,15 @@ void delete(int id)
                 break;
             }
         }
-        if (cur->id == id) // target exists
-        {
-            free(cur);
-            printf("Deleting is complete!\n");
-        }
-        if (cur == NULL) // target doesn't exist
+        if (cur == NULL || cur->id != id) // target doesn't exist
         {
             printf("Target doesn't exist!\n");
+        }
+        else // target exists
+        {
+            pre->next = cur->next;
+            free(cur);
+            printf("Deleting is complete!\n");
         }
     }
 }
@@ -152,14 +153,14 @@ void update(int id, char name[])
                 break;
             }
         }
-        if (cur->id == id)
+        if (cur == NULL || cur->id != id) // node doesn't exist
+        {
+            printf("There is no such node!\n");
+        }
+        else // node does exist
         {
             strcpy(cur->name, name);
             printf("Updating is complete!\n");
-        }
-        else
-        {
-            printf("There is no such node!\n");
         }
     }
 }
@@ -187,13 +188,14 @@ void retrieve(int id)
                 break;
             }
         }
-        if( cur -> id == id){
-            printf("Name: %s\n", cur->name);
-        }
-        else
+        if (cur == NULL || cur->id != id) // node doesnt exist
         {
             printf("There is no such node!\n");
         }
+        else// node does exist
+        {   
+            printf("Name: %s\n", cur->name);
+        } 
     }
 }
 
@@ -210,7 +212,7 @@ void print_linked_list()
         printf("List is empty!\n");
     for (cur = list->next; cur != NULL; cur = cur->next)
     {
-        printf("Name: %s\n", cur->name);
+        printf("Id: %d Name: %s\n", cur->id, cur->name);
     }
 }
 
@@ -237,7 +239,6 @@ void free_list()
             cur = cur->next;
             free(pre);
         }
-        free(cur);  // free a last node
         free(list); // free struct of list
     }
 }
@@ -338,7 +339,7 @@ int main()
                 while (getchar() != '\n')
                     ; // 입력 버퍼 비우기
             }
-            delete (id);
+            delete(id);
 
             break;
         }
