@@ -369,7 +369,7 @@ void free_list(Linked_List *list)
             free(tmp);
         }
         // 리스트 구조체 해제
-        Free(list->head);
+        free(list->head);
         free(list);
     }
 }
@@ -397,7 +397,7 @@ void initialize_list()
         free(tmp);
     }
     // head 노드 Free
-    Free(list->head);
+    free(list->head);
 
     list->head = NULL;
 
@@ -475,7 +475,7 @@ int main()
                     ; // 입력 버퍼 비우기
             }
 
-            delete (num);
+            delete(num);
             break;
         }
         case UPDATE: // 3
