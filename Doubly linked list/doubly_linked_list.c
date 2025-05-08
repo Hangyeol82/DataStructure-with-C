@@ -14,9 +14,8 @@ Copyright (c) 2025 Hangyeol Lee. All rights reserved.
 #define DELETE 2
 #define UPDATE 3
 #define RETRIEVE 4
-#define INITIALIZE 5
-#define PRINT 6
-#define QUIT 7
+#define PRINT 5
+#define QUIT 6
 
 #define MAX_NAME 10
 #define OK 1
@@ -37,8 +36,6 @@ typedef struct Doubly_Linked_List // struct of Doubly linked list
 
 Linked_List *list = NULL;
 
-/*  고쳐야함!!!!!!!!!!!!! insert빼고 다 void로 바꾸고 while문을 for문으로 바꾸기   */
-
 /*------------------------------------------------------------------------
  Function: Inserting a new node into the doubly linked list sorted by id
  Interface: void insert(int id, char name[])
@@ -49,6 +46,7 @@ Linked_List *list = NULL;
 int insert(int id, char name[])
 {
     Node *new_node = (Node *)malloc(sizeof(Node)); // node to insert
+
     if (new_node == NULL)
     {
         printf("Menory allocation was failed in insert() \n");
@@ -348,8 +346,8 @@ void print_linked_list()
 ------------------------------------------------------------------------*/
 void free_list(Linked_List *list)
 {
-    Node *tmp;                        // Free할 노드
-    
+    Node *tmp; // Free할 노드
+
     if (list->head == NULL) // list가 비어있을때
     {
         free(list);
@@ -359,7 +357,7 @@ void free_list(Linked_List *list)
         Node *r_side = list->head->right; // 오른쪽 탐색할 노드
         Node *l_side = list->head->left;  // 왼쪽 탐색할 노드
         // 왼쪽 리스트 free
-        
+
         for (tmp = NULL; l_side != NULL; tmp = l_side, l_side = l_side->left)
         {
             free(tmp);
@@ -372,41 +370,6 @@ void free_list(Linked_List *list)
         // 리스트 구조체 해제
         free(list->head);
         free(list);
-    }
-}
-
-/*------------------------------------------------------------------------
- Function: initialize the doubly linked list
- Interface: void initialize_list()
- Parameters: None
- Return: void
-------------------------------------------------------------------------*/
-void initialize_list()
-{
-    if (list->head == NULL)
-    {
-        printf("List is already empty!\n");
-    }
-    else
-    {
-        Node *tmp;
-        Node *l_side = list->head->left;
-        Node *r_side = list->head->right;
-        
-        for (tmp = NULL; l_side != NULL; tmp = l_side, l_side = l_side->left)
-        {
-            free(tmp);
-        }
-    
-        for (tmp = NULL; r_side != NULL; tmp = r_side, r_side = r_side->right)
-        {
-            free(tmp);
-        }
-    
-        free(list->head);
-        list->head = NULL;
-    
-        printf("Initializing is complete!\n");
     }
 }
 
@@ -423,8 +386,7 @@ int main()
         printf("----------------------------------------------------------------\n");
         printf(" Insert        = 1           Delete        = 2 \n");
         printf(" Update        = 3           Retrieve      = 4 \n");
-        printf(" Initialize    = 5           Print         = 6 \n");
-        printf(" Quit          = 7 \n");
+        printf(" Initialize    = 5           Quit          = 6 \n");
         printf("----------------------------------------------------------------\n");
 
         printf("Command = ");
@@ -525,13 +487,10 @@ int main()
 
             break;
         }
-        case INITIALIZE: // 5
-            initialize_list();
-            break;
-        case PRINT: // 6
+        case PRINT: // 5
             print_linked_list();
             break;
-        case QUIT: // 7
+        case QUIT: // 6
             free_list(list);
             break;
         default:
