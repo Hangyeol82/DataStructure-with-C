@@ -180,9 +180,10 @@ void update(int id, char name[])
 
 /*----------------------------------------------------------------------------
  Function: retrieve a name of a node with a certain id
- Interface: void retrieve(int id)
+ Interface: char* retrieve(int id)
  Parameter: int id: id of the node to be retrieved
- return: void
+ return: if a node is successfully found, return name of a node
+         Otherwise return FAIL
 ----------------------------------------------------------------------------*/
 char *retrieve(int id)
 {

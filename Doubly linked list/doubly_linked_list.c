@@ -50,69 +50,73 @@ int insert(int id, char name[])
 
     if (new_node == NULL)
     {
-        printf("Menory allocation was failed in insert() \n");
+        printf("Memory allocation was failed in insert() \n");
         exit(1);
     }
 
     new_node->id = id;
-    strcpy(new_node->name, name); // initialize new_node
+    strcpy(new_node->name, name); // Set the input value
 
     Node *cur; // node for searching
+    Node *pre;
 
     if (list->head == NULL) // in case that list is empty
     {
+        new_node->right = NULL;
+        new_node->left = NULL;
         list->head = new_node;
     }
     else if (id < list->head->id) // 왼쪽으로 탐색, head의 id보다 작을때
     {
-        for (cur = list->head; cur->left != NULL; cur = cur->left)
+        for (cur = list->head; cur != NULL; pre = cur, cur = cur->left)
         // 삽입할 위치를 찾을때까지
         {
-            if (cur->left->id <= id)
+            if (cur->id <= id)
             {
                 break;
             }
         }
 
-        if (cur->left == NULL) // 노드를 마지막에 삽입할때
+        if (cur == NULL) // 노드를 마지막에 삽입할때
         {
-            new_node->right = cur;
-            cur->left = new_node;
+            new_node->right = pre;
+            pre->left = new_node;
             new_node->left = NULL;
         }
         else // 노드를 중간에 삽입할때
         {
-            new_node->left = cur->left;
-            new_node->right = cur;
-            cur->left->right = new_node;
-            cur->left = new_node;
+            new_node->left = pre->left;
+            new_node->right = pre;
+            pre->left->right = new_node;
+            pre->left = new_node;
         }
     }
     else // 오른쪽으로 탐색, head의 id보다 값이 클때
     {
-        for (cur = list->head; cur->right != NULL; cur = cur->right)
+        for (cur = list->head; cur != NULL; pre = cur, cur = cur->right)
         // 삽입할 위치를 찾을때까지
         {
-            if (cur->right->id > id)
+            if (cur->id > id)
             {
                 break;
             }
         }
 
-        if (cur->right == NULL) // 노드를 마지막에 삽입할때
+        if (cur == NULL) // 노드를 마지막에 삽입할때
         {
-            new_node->left = cur;
-            cur->right = new_node;
+            new_node->left = pre;
+            pre->right = new_node;
             new_node->right = NULL;
         }
         else // 노드를 중간에 삽입할때
         {
-            new_node->right = cur->right;
-            new_node->left = cur;
-            cur->right->left = new_node;
-            cur->right = new_node;
+            new_node->right = pre->right;
+            new_node->left = pre;
+            pre->right->left = new_node;
+            pre->right = new_node;
         }
     }
+
     return OK;
 }
 
@@ -164,7 +168,7 @@ void delete(int id)
     {
         if (id < list->head->id) // 삭제할 노드 찾기
         {
-            for (cur = list->head; cur->left != NULL; cur = cur->left)
+            for (; cur != NULL; cur = cur->left)
             {
                 if (cur->id <= id)
                 {
@@ -174,7 +178,7 @@ void delete(int id)
         }
         else
         {
-            for (cur = list->head; cur->right != NULL; cur = cur->right)
+            for (; cur != NULL; cur = cur->right)
             {
                 if (cur->id >= id)
                 {
@@ -183,7 +187,11 @@ void delete(int id)
             }
         }
 
-        if (cur->id == id)
+        if (cur == NULL) // 노드가 존재하지 않을때
+        {
+            printf("There is no such node!\n");
+        }
+        else if (cur->id == id)
         {
             if (cur->right != NULL && cur->left != NULL)
             // 삭제할 노드의 양쪽에 노드가 있을때
@@ -233,7 +241,7 @@ void update(int id, char name[])
     {
         if (id < cur->id) // update 할 노드 찾기
         {
-            for (cur = list->head; cur->left != NULL; cur = cur->left)
+            for (; cur != NULL; cur = cur->left)
             {
                 if (cur->id <= id)
                 {
@@ -243,7 +251,7 @@ void update(int id, char name[])
         }
         else
         {
-            for (cur = list->head; cur->right != NULL; cur = cur->right)
+            for (; cur != NULL; cur = cur->right)
             {
                 if (cur->id >= id)
                 {
@@ -252,7 +260,11 @@ void update(int id, char name[])
             }
         }
 
-        if (cur->id == id) // update 할 노드가 존재하면
+        if (cur == NULL) // 노드가 존재하지 않을때
+        {
+            printf("There is no such node!\n");
+        }
+        else if (cur->id == id) // update 할 노드가 존재하면
         {
             strcpy(cur->name, name);
         }
@@ -265,11 +277,12 @@ void update(int id, char name[])
 
 /*------------------------------------------------------------------------
  Function: Retrieve and prints the name of a node with the specified ID.
- Interface: void retrieve(int id)
+ Interface: char* retrieve(int id)
  Parameters: int id: ID of the node to retrieve.
- Return: void
+ Return: if a node is successfully found, return name of a node
+         Otherwise return FAIL
 ------------------------------------------------------------------------*/
-void retrieve(int id)
+char *retrieve(int id)
 {
     Node *cur = list->head; // node for searching
 
@@ -279,13 +292,13 @@ void retrieve(int id)
     }
     else if (cur->id == id)
     { // retrieve 할 노드가 head 노드일때
-        printf("Name: %s\n", cur->name);
+        return cur->name;
     }
     else
     {
         if (id < cur->id) // retrieve 할 노드 찾기
         {
-            for (cur = list->head; cur->left != NULL; cur = cur->left)
+            for (; cur != NULL; cur = cur->left)
             {
                 if (cur->id <= id)
                 {
@@ -295,7 +308,7 @@ void retrieve(int id)
         }
         else
         {
-            for (cur = list->head; cur->right != NULL; cur = cur->right)
+            for (; cur != NULL; cur = cur->right)
             {
                 if (cur->id >= id)
                 {
@@ -304,15 +317,21 @@ void retrieve(int id)
             }
         }
 
-        if (cur->id == id) // Retrieve할 노드가 존재하면
+        if (cur == NULL)
         {
-            printf("Name: %s\n", cur->name);
+            printf("There is no such node!\n");
         }
-        else // 삭제할 노드가 존재하지 않으면
+        else if (cur->id == id) // Retrieve할 노드가 존재하면
+        {
+            return cur->name;
+        }
+        else // retrieve할 노드가 존재하지 않으면
         {
             printf("There is no such node!\n");
         }
     }
+
+    return FAIL;
 }
 
 /*------------------------------------------------------------------------
@@ -325,15 +344,14 @@ void print_linked_list()
 {
     if (list->head == NULL) // list가 비어있으면
     {
-        printf("list is emptry!\n");
+        printf("list is empty!\n");
     }
     else
     {
         Node *cur = list->head; // list를 탐색할 노드
 
         for (; cur->left != NULL; cur = cur->left)
-        {
-        } // 맨 왼쪽으로 이동
+            ; // 맨 왼쪽으로 이동
 
         for (; cur != NULL; cur = cur->right) // 오른쪽 끝에 닿을 때까지 출력
         {
@@ -360,8 +378,8 @@ void free_list(Linked_List *list)
     {
         Node *r_side = list->head->right; // 오른쪽 탐색할 노드
         Node *l_side = list->head->left;  // 왼쪽 탐색할 노드
-        // 왼쪽 리스트 free
 
+        // 왼쪽 리스트 free
         for (tmp = NULL; l_side != NULL; tmp = l_side, l_side = l_side->left)
         {
             free(tmp);
@@ -477,6 +495,7 @@ int main()
         case RETRIEVE: // 4
         {
             int id;
+            char *name;
 
             printf("Input id: ");
             while (scanf("%d", &id) != 1) // 입력값이 정수가 아닐 경우
@@ -486,7 +505,16 @@ int main()
                     ; // 입력 버퍼 비우기
             }
 
-            retrieve(id);
+            name = retrieve(id);
+
+            if (name == FAIL)
+            {
+                printf("retrieve() was failed\n");
+            }
+            else
+            {
+                printf("Name: %s\n", name);
+            }
 
             break;
         }
