@@ -34,14 +34,15 @@ typedef struct Doubly_Linked_List // struct of Doubly linked list
     Node *head;
 } Linked_List;
 
-Linked_List *list = NULL;
+Linked_List *list;
 
 /*------------------------------------------------------------------------
- Function: Inserting a new node into the doubly linked list sorted by id
- Interface: void insert(int id, char name[])
+ Function: Insert a new node into the doubly linked list sorted by id
+ Interface: int insert(int id, char name[])
  Parameters: int id: ID of the node to insert
              char name[]: Name of the node to insert
  Return: if the inserting is complete, return OK
+         Otherwise, exit()
 ------------------------------------------------------------------------*/
 int insert(int id, char name[])
 {
@@ -58,7 +59,7 @@ int insert(int id, char name[])
 
     Node *cur; // node for searching
 
-    if (list->head == NULL) // list is empty
+    if (list->head == NULL) // in case that list is empty
     {
         list->head = new_node;
     }
@@ -97,6 +98,7 @@ int insert(int id, char name[])
                 break;
             }
         }
+
         if (cur->right == NULL) // 노드를 마지막에 삽입할때
         {
             new_node->left = cur;
@@ -115,7 +117,7 @@ int insert(int id, char name[])
 }
 
 /*------------------------------------------------------------------------
- Function: Deleting a node in the doubly linked list.
+ Function: Delete a node in the doubly linked list.
  Interface: void delete(int id)
  Parameters: int id: ID of the node to delete
  Return: void
@@ -124,7 +126,7 @@ void delete(int id)
 {
     Node *cur = list->head; // node for searching
 
-    if (list->head == NULL) // when list is empty
+    if (list->head == NULL) // in case that list is empty
     {
         printf("list is empty!\n");
     }
@@ -180,6 +182,7 @@ void delete(int id)
                 }
             }
         }
+
         if (cur->id == id)
         {
             if (cur->right != NULL && cur->left != NULL)
@@ -208,8 +211,8 @@ void delete(int id)
 }
 
 /*------------------------------------------------------------------------
- Function: Updating the name of a node with a specified ID.
- Interface: int update(int id, char name[])
+ Function: Update the name of a node with a specified ID.
+ Interface: void update(int id, char name[])
  Parameters: int id: ID of the node to update
              char name[]: New name to assign to the node
  Return: void
@@ -218,7 +221,7 @@ void update(int id, char name[])
 {
     Node *cur = list->head; // node for searching
 
-    if (cur == NULL) // list is empty
+    if (cur == NULL) // in case that list is empty
     {
         printf("List is empty!\n");
     }
@@ -248,6 +251,7 @@ void update(int id, char name[])
                 }
             }
         }
+
         if (cur->id == id) // update 할 노드가 존재하면
         {
             strcpy(cur->name, name);
@@ -260,8 +264,8 @@ void update(int id, char name[])
 }
 
 /*------------------------------------------------------------------------
- Function: Retrieving and prints the name of a node with the specified ID.
- Interface: int retrieve(int id)
+ Function: Retrieve and prints the name of a node with the specified ID.
+ Interface: void retrieve(int id)
  Parameters: int id: ID of the node to retrieve.
  Return: void
 ------------------------------------------------------------------------*/
@@ -269,7 +273,7 @@ void retrieve(int id)
 {
     Node *cur = list->head; // node for searching
 
-    if (cur == NULL) // list is empty
+    if (cur == NULL) // in case that list is empty
     {
         printf("List is empty!\n");
     }
@@ -312,7 +316,7 @@ void retrieve(int id)
 }
 
 /*------------------------------------------------------------------------
- Function: Prints all nodes in the doubly linked list in ascending order.
+ Function: Print all nodes in the doubly linked list in ascending order.
  Interface: void print_linked_list())
  Parameters: None
  Return: void
@@ -339,7 +343,7 @@ void print_linked_list()
 }
 
 /*------------------------------------------------------------------------
- Function: Frees all nodes in the doubly linked list and releases memory.
+ Function: Free all nodes in the doubly linked list and releases memory.
  Interface: void free_list()
  Parameters: None
  Return: void
@@ -377,8 +381,10 @@ int main()
 {
     list = (Linked_List *)malloc(sizeof(Linked_List));
     list->head = NULL;
+
     int command;
     int ret; // scanf에 잘못 입력됨을 확인하는 변수
+
     do
     {
         printf("----------------------------------------------------------------\n");
@@ -386,7 +392,7 @@ int main()
         printf("----------------------------------------------------------------\n");
         printf(" Insert        = 1           Delete        = 2 \n");
         printf(" Update        = 3           Retrieve      = 4 \n");
-        printf(" Initialize    = 5           Quit          = 6 \n");
+        printf(" Print         = 5           Quit          = 6 \n");
         printf("----------------------------------------------------------------\n");
 
         printf("Command = ");
@@ -424,10 +430,7 @@ int main()
             {
                 printf("Inserting is complete\n");
             }
-            else
-            {
-                printf("Inserting is failed\n");
-            }
+            print_linked_list();
 
             break;
         }

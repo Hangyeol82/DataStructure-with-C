@@ -28,7 +28,7 @@ typedef struct S_Node // struct of singly linked list node
     struct S_Node *next;
 } Node;
 
-Node *list = NULL;
+Node *first = NULL;
 
 /*----------------------------------------------------------------------------
   Function : insert a node in the singly linked list sorted by id
@@ -48,23 +48,23 @@ int insert(int id, char name[])
         exit(1);
     }
 
-    new_node->id = id;
-    strcpy(new_node->name, name); // initialize node
+    new_node->id = id; // set the input values
+    strcpy(new_node->name, name);
 
-    if (list == NULL) // in case of the linked list is empty
+    if (first == NULL) // in case of the linked list is empty
     {
-        list = new_node;
+        first = new_node;
         new_node->next = NULL;
     }
-    else if (list->id > id) // in case of the first node
+    else if (first->id > id) // in case of the list node
     {
-        new_node->next = list;
-        list = new_node;
+        new_node->next = first;
+        first = new_node;
     }
     else // in case of the middle or end node
     {
-        Node *cur = list; // node for searching
-        Node *pre = NULL; // previous node
+        Node *cur = first; // node for searching
+        Node *pre = NULL;  // previous node
 
         for (; cur != NULL; pre = cur, cur = cur->next)
         // in case of the middle location
@@ -95,23 +95,23 @@ int insert(int id, char name[])
 ----------------------------------------------------------------------------*/
 void delete(int id)
 {
-    if (list == NULL) // in case the list is empty
+    Node *cur; // node for searching
+    Node *pre; // previous node of cur
+
+    if (first == NULL) // in case the list is empty
     {
-        printf("List is empty!\n");
+        printf("list is empty!\n");
     }
-    else if (list->id == id) // in case of the first node
+    else if (first->id == id) // in case of the list node
     {
-        Node *target = list;
-        list = target->next;
-        free(target);
+        first = cur->next;
+        free(cur);
         printf("Deleting is done!\n");
     }
     else // in case of the middle or end node
     {
-        Node *cur; // node for seraching
-        Node *pre; // previous node of cur
 
-        for (pre = list, cur = pre->next; cur != NULL; pre = cur, cur = cur->next)
+        for (pre = first, cur = pre->next; cur != NULL; pre = cur, cur = cur->next)
         // finding a node to delete
         {
             if (cur->id >= id)
@@ -146,15 +146,15 @@ void delete(int id)
 ----------------------------------------------------------------------------*/
 void update(int id, char name[])
 {
-    if (list == NULL) // in case the list is empty
+    if (first == NULL) // in case the list is empty
     {
-        printf("List is empty!\n");
+        printf("list is empty!\n");
     }
     else
     {
         Node *cur; // node for searching
 
-        for (cur = list; cur != NULL; cur = cur->next)
+        for (cur = first; cur != NULL; cur = cur->next)
         {
             if (cur->id >= id)
             {
@@ -184,17 +184,17 @@ void update(int id, char name[])
  Parameter: int id: id of the node to be retrieved
  return: void
 ----------------------------------------------------------------------------*/
-void retrieve(int id)
+char *retrieve(int id)
 {
-    if (list == NULL) // in case the list is empty
+    if (first == NULL) // in case the list is empty
     {
-        printf("List is empty!\n");
+        printf("list is empty!\n");
     }
     else
     {
         Node *cur;
 
-        for (cur = list; cur != NULL; cur = cur->next)
+        for (cur = first; cur != NULL; cur = cur->next)
         {
             if (cur->id >= id)
             {
@@ -212,9 +212,11 @@ void retrieve(int id)
         }
         else // A node was found
         {
-            printf("Name: %s\n", cur->name);
+            return cur->name;
         }
     }
+
+    return FAIL;
 }
 
 /*----------------------------------------------------------------------------
@@ -225,14 +227,14 @@ void retrieve(int id)
 ----------------------------------------------------------------------------*/
 void print_linked_list()
 {
-    Node *cur = list;
+    Node *cur = first;
 
     if (cur == NULL)
-        printf("List is empty!\n");
+        printf("list is empty!\n");
     else
     {
         printf("\n");
-        for (cur = list; cur != NULL; cur = cur->next)
+        for (cur = first; cur != NULL; cur = cur->next)
         {
             printf("Id: %d      Name: %s\n", cur->id, cur->name);
         }
@@ -248,22 +250,22 @@ void print_linked_list()
 ----------------------------------------------------------------------------*/
 void free_list()
 {
-    if (list == NULL) // list is empty
+    if (first == NULL) // list is empty
     {
-        list = NULL;
+        first = NULL;
     }
     else
     {
         Node *cur;
         Node *pre;
 
-        for (cur = list; cur != NULL; cur = cur->next)
+        for (cur = first; cur != NULL; cur = cur->next)
         {
             pre = cur;
             cur = cur->next;
             free(pre);
         }
-        list = NULL;
+        first = NULL;
     }
 }
 
@@ -368,6 +370,7 @@ int main()
         case RETRIEVE: // 4
         {
             int id;
+            char *name;
 
             printf("Input Id: ");
             while (scanf("%d", &id) != 1) // 입력값이 정수가 아닐 경우
@@ -377,7 +380,16 @@ int main()
                     ; // 입력 버퍼 비우기
             }
 
-            retrieve(id);
+            name = retrieve(id);
+
+            if (name == FAIL)
+            {
+                printf("Retreive() was failed\n");
+            }
+            else
+            {
+                printf("Name: %s", name);
+            }
 
             break;
         }
