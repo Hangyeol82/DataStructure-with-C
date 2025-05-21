@@ -78,7 +78,7 @@ int insert(int id, char name[])
         for (cur = list->head; cur != NULL; pre = cur, cur = cur->right)
         // 삽입할 위치를 찾을때까지
         {
-            if (cur->id > id) 
+            if (cur->id > id)
             {
                 break;
             }
@@ -118,31 +118,15 @@ void delete(int id)
     }
     else if (cur->id == id) // 삭제할 노드가 head 노드일때
     {
-        if (cur->right != NULL && cur->left != NULL)
-        // head 양쪽에 둘다 노드가 있을때
+        if(cur->right == NULL) // 헤드 노드만 있는 경우
         {
-            list->head = cur->right;
-            list->head->left = cur->left;
-            cur->left->right = list->head;
+            list->head = NULL;
             free(cur);
         }
-        else if (cur->left == NULL && cur->right != NULL)
-        // 오른쪽에만 존재할때
+        else // 헤드 노드와 연결된 노드가 있는 경우
         {
             list->head = cur->right;
             list->head->left = NULL;
-            free(cur);
-        }
-        else if (cur->left != NULL)
-        // 왼쪽에만 존재할때
-        {
-            list->head = cur->left;
-            list->head->right = NULL;
-            free(cur);
-        }
-        else // head만 존재할때
-        {
-            list->head = NULL;
             free(cur);
         }
     }
@@ -167,11 +151,6 @@ void delete(int id)
             {
                 cur->left->right = cur->right;
                 cur->right->left = cur->left;
-                free(cur);
-            }
-            else if (cur->left == NULL) // 오른쪽에만 있을때
-            {
-                cur->right->left = NULL;
                 free(cur);
             }
             else // 왼쪽에만 있을때
@@ -242,7 +221,7 @@ char *retrieve(int id)
 {
     Node *cur = list->head; // node for searching
 
-    if (cur == NULL) // in case that list is empty
+    if (cur == NULL) // in case of the list is empty
     {
         printf("List is empty!\n");
     }
@@ -314,8 +293,8 @@ void free_list(Linked_List *list)
     }
     else
     {
-        Node *cur = list->head; // 오른쪽 탐색할 노드
-        Node *pre = NULL;
+        Node *cur = list->head; // 탐색용 노드
+        Node *pre = NULL;       // free할 노드
 
         for (; cur != NULL; pre = cur, cur = cur->right) // 오른쪽으로 이동하면서 free
         {
