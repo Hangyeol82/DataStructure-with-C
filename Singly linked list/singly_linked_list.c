@@ -56,7 +56,7 @@ int insert(int id, char name[])
         first = new_node;
         new_node->next = NULL;
     }
-    else if (first->id > id) // in case of the list node
+    else if (first->id > id) // in case of the first node
     {
         new_node->next = first;
         first = new_node;
