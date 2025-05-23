@@ -118,7 +118,7 @@ void delete(int id)
     }
     else if (cur->id == id) // 삭제할 노드가 head 노드일때
     {
-        if(cur->right == NULL) // 헤드 노드만 있는 경우
+        if (cur->right == NULL) // 헤드 노드만 있는 경우
         {
             list->head = NULL;
             free(cur);
@@ -271,11 +271,12 @@ void print_linked_list()
     else
     {
         Node *cur = list->head; // list를 탐색할 노드
-
+        printf("----------------\n");
         for (; cur != NULL; cur = cur->right) // 오른쪽 끝에 닿을 때까지 출력
         {
             printf("%d\t%s\n", cur->id, cur->name);
         }
+        printf("----------------\n");
     }
 }
 
