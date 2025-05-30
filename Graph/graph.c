@@ -14,8 +14,8 @@ Copyright (c) 2025 Hangyeol Lee. All rights reserved.
 #define MAX_EDGE 200
 
 #define MAX_STACK_SIZE 100
-#define STACK_OVERFLOW -1
-#define STACK_UNDERFLOW -2
+#define STACKOVERFLOW -1
+#define STACKUNDERFLOW -2
 
 #define MAX_QUEUE_SIZE 100
 #define QUEUE_OVERFLOW -1
@@ -24,10 +24,10 @@ Copyright (c) 2025 Hangyeol Lee. All rights reserved.
 // 간선 노드
 typedef struct AdjNode
 {
-    int source;               // 시작된 정점 id
-    int weight;               // 간선의 w
-    struct Node *dest_node;   // dest 정점 주소
-    struct AdjNode *next;     // 다음 간선
+    int source;             // 시작된 정점 id
+    int weight;             // 간선의 w
+    struct Node *dest_node; // dest 정점 주소
+    struct AdjNode *next;   // 다음 간선
 } AdjNode;
 
 // 정점 노드
@@ -50,10 +50,18 @@ Graph *g; // 그래프 선언
 Node *stack[MAX_STACK_SIZE];
 int top = -1;
 
+/*-------------------------------------------------------------------------------------
+ Function: 스택에 한 원소를 추가한다
+ Interface: int push()
+ Parameter: int number = a student number to push
+            char name[] = a name of student to push
+ return:  if the pushing is complete, return OK
+          if the stack is full, return STACKOVERFLOW
+-------------------------------------------------------------------------------------*/
 int push(Node *node)
 {
     if (top + 1 >= MAX_STACK_SIZE)
-        return STACK_OVERFLOW;
+        return STACKOVERFLOW;
     else
     {
         stack[++top] = node;
@@ -61,10 +69,17 @@ int push(Node *node)
     }
 }
 
+/*-------------------------------------------------------------------------------------
+ Function: 스택에서 top이 가르키는 최상위 원소의 주소를 리턴한다
+ Interface: Node* pop()
+ Paramete: None
+ return: if error, return address of STACKUNDERFLOW
+         otherwise return address of top node
+-------------------------------------------------------------------------------------*/
 Node *pop()
 {
     if (top <= -1)
-        return (Node *)STACK_UNDERFLOW;
+        return (Node *)STACKUNDERFLOW;
     else
     {
         return stack[top--];
@@ -75,6 +90,13 @@ Node *queue[MAX_QUEUE_SIZE];
 int front = 0;
 int rear = 0;
 
+/*------------------------------------------------------------------------------
+ Function: 큐에 노드를 추가하고 rear의 값에 +1 연산을 수행한다
+ Interface: int enqueue(Node *node)
+ Parameter: Node *node = address of a node to enqueue
+ return: if the queue is full, return QUEUE_OVERFLOW
+         otherwise return OK.
+------------------------------------------------------------------------------*/
 int enqueue(Node *node)
 {
     if (rear >= MAX_QUEUE_SIZE)
@@ -85,6 +107,14 @@ int enqueue(Node *node)
         return OK;
     }
 }
+
+/*------------------------------------------------------------------------------
+ Function: 큐의 front가 가르키는 노드의 주소를 리턴한다
+ Interface: Node *dequeue()
+ Parameter: None
+ return: if the queue is empty, return address of QUEUE_UNDERFLOW
+         otherwise return address of the first node in queue
+------------------------------------------------------------------------------*/
 
 Node *dequeue()
 {
@@ -98,14 +128,20 @@ Node *dequeue()
 
 typedef struct UnionFindNode
 {
-    int id;
-    int rank;
-    struct UnionFindNode *parent;
+    int id;                       // 노드 번호
+    int rank;                     // 노드의 랭크
+    struct UnionFindNode *parent; // 노드의 부모 주소
 } UnionFindNode;
 
+/*------------------------------------------------------------------------
+ Function: make a node with id n and return address of that node
+ Interface: UnionFindNode *init_UF_Node(int n)
+ Parameters: int n: id of the node to be create
+ Return: return an address of the created node
+------------------------------------------------------------------------*/
 UnionFindNode *init_UF_Node(int n)
 {
-    UnionFindNode *new_node = (UnionFindNode *)malloc(sizeof(UnionFindNode *));
+    UnionFindNode *new_node = (UnionFindNode *)malloc(sizeof(UnionFindNode));
     new_node->id = n;
     new_node->rank = 0;
     new_node->parent = new_node;
@@ -113,6 +149,12 @@ UnionFindNode *init_UF_Node(int n)
     return new_node;
 }
 
+/*------------------------------------------------------------------------
+ Function: find an address of the top parent
+ Interface: UnionFindNode *UF_find(UnionFindNode *node)
+ Parameters: UnionFindNode *node: address of a node
+ Return: retrun the address of the most top parent
+------------------------------------------------------------------------*/
 UnionFindNode *UF_find(UnionFindNode *node) // 추가 사항 경로 압축
 {
     UnionFindNode *cur = node;
@@ -121,6 +163,13 @@ UnionFindNode *UF_find(UnionFindNode *node) // 추가 사항 경로 압축
     return cur;
 }
 
+/*------------------------------------------------------------------------
+ Function: merge two Union Find structures
+ Interface: void UF_set(UnionFindNode *a, UnionFindNode *b)
+ Parameters: UnionFindNode *a: an address of a Union Find node
+             UnionFindNode *b: another address of a Union Find node
+ Return: void
+------------------------------------------------------------------------*/
 void UF_set(UnionFindNode *a, UnionFindNode *b)
 {
     UnionFindNode *a_parent = UF_find(a);
@@ -207,7 +256,6 @@ int add_edge(int s, int e, int w)
     new_edge->source = s;
     new_edge->weight = w; // 새로운 간선 노드 초기화
     new_edge->dest_node = end;
-    new_edge->next = NULL; // next 초기화 추가
 
     AdjNode *cur;
     AdjNode *pre;
@@ -216,6 +264,7 @@ int add_edge(int s, int e, int w)
     if (start->adjList == NULL) // 간선이 하나도 없을 때 (인접 리스트가 비어있음)
     {
         start->adjList = new_edge;
+        new_edge->next = NULL;
     }
     else if (start->adjList->dest_node->id < e) // 첫번째 인접 리스트의 dest보다 새로 추가하는 간선의 e가 작을때
     {
@@ -224,7 +273,7 @@ int add_edge(int s, int e, int w)
     }
     else
     {
-        for (cur = start->adjList; cur != NULL; pre = cur, cur = cur->next)
+        for (cur = start->adjList; cur != NULL; pre = cur, cur = cur->next) // 노드를 삽입할 위치 찾기
         {
             if (cur->dest_node->id > e)
             {
@@ -232,12 +281,12 @@ int add_edge(int s, int e, int w)
             }
         }
 
-        if (cur == NULL)
+        if (cur == NULL) // 맨 끝에 삽입하는 경우
         {
             pre->next = new_edge;
             new_edge->next = NULL;
         }
-        else
+        else // 중간에 삽입하는 경우
         {
             pre->next = new_edge;
             new_edge->next = cur;
@@ -295,7 +344,7 @@ void bfs(int id)
     front = rear = 0;                  // 큐 초기화
 
     Node *start = find_node(id); // bfs탐색을 시작할 노드 불러오기
-    visited[start->id] = 1;          // 첫번째 노드는 무조건 방문하니 visited 변수 1로 초기화
+    visited[start->id] = 1;      // 첫번째 노드는 무조건 방문하니 visited 변수 1로 초기화
     enqueue(start);              // 큐에 첫번째 노드 Enqueue
 
     Node *cur;    // 노드를 가르키는 변수
@@ -313,7 +362,7 @@ void bfs(int id)
                 continue;
             else
             {
-                push(now->dest_node);   // 방문한 적 없으면 Push
+                push(now->dest_node);            // 방문한 적 없으면 Push
                 visited[now->dest_node->id] = 1; // 여기서 visited 값을 1로 변경해야 같은 값이 큐에 들어가지 않음.
             }
         }
@@ -328,6 +377,15 @@ void bfs(int id)
     printf("\n");
 }
 
+/*------------------------------------------------------------------------
+ Function: compare weights of two edges for library function qsort()
+ Interface: int compare_edge(const void *a, const void *b)
+ Parameters: const void *a: pointer of an edge
+             const void *b: pointer of an another edge
+ Return: if a < b, return -1
+         if a > b, return +1
+         if a == b. return 0
+------------------------------------------------------------------------*/
 int compare_edge(const void *a, const void *b)
 {
     const AdjNode *edge_a = *(const AdjNode **)a;
@@ -340,7 +398,12 @@ int compare_edge(const void *a, const void *b)
     else
         return 0;
 }
-
+/*------------------------------------------------------------------------
+ Function: print all edges of a minimum spanning tree and total weight of mst
+ Interface: void mst()
+ Parameters: None
+ Return: void
+------------------------------------------------------------------------*/
 void mst()
 {
     int num_vertex = 0;                             // 전체 정점 노드 개수를 담을 변수
@@ -349,7 +412,6 @@ void mst()
     AdjNode *cur;                                   // 간선 노드 탐색할 변수
     AdjNode *edge_arr[MAX_EDGE];                    // 간선 정보를 담을 배열
     UnionFindNode *unionfind_nodes[MAX_VERTEX + 1]; // Union Find 노드들을 담을 배열
-    int i = 0;                                      // edge_arr의 Index 변수
 
     for (int i = 0; start != NULL; start = start->next) // 정점 노드 루프
     {
@@ -373,25 +435,28 @@ void mst()
     qsort(edge_arr, num_edge, sizeof(AdjNode *), compare_edge); // qsort함수를 이용해서 오름차순 정렬
 
     AdjNode *mst_edge[num_vertex - 1]; // mst의 간선 정보를 담을 배열, 전체 정점 개수 -1 = mst 간선의 개수
-    i = 0;                             // 정렬된 edge_arr의 Index 변수
-    int j = 0;                         // mst_edge의 index 변수
+    int edge_arr_i = 0;                // 정렬된 edge_arr의 Index 변수
+    int mst_edge_i = 0;                // mst_edge의 index 변수
     int total_weight = 0;              // Mst의 전체 가중치 값
 
-    while (j < num_vertex - 1 && i < num_edge) // mst_edge를 다 채울때 까지
+    while (mst_edge_i < num_vertex - 1 && edge_arr_i < num_edge) // mst_edge를 다 채울때 까지
     {
-        if (UF_find(unionfind_nodes[edge_arr[i]->dest_node->id]) != UF_find(unionfind_nodes[edge_arr[i]->source])) // Union find 자료구조를 활용해서 연결됐는지 확인
+        if (UF_find(unionfind_nodes[edge_arr[edge_arr_i]->dest_node->id]) !=
+            UF_find(unionfind_nodes[edge_arr[edge_arr_i]->source])) // Union find 자료구조를 활용해서 연결됐는지 확인
         {
-            UF_set(unionfind_nodes[edge_arr[i]->dest_node->id], unionfind_nodes[edge_arr[i]->source]); // UF_set함수로 두 정점 연결시키기
-            mst_edge[j++] = edge_arr[i];                                                      // edge_arr에 간선 추가.
-            total_weight += edge_arr[i]->weight;                                              // total_Weight에 weight 덧셈
+            UF_set(unionfind_nodes[edge_arr[edge_arr_i]->dest_node->id],
+                   unionfind_nodes[edge_arr[edge_arr_i]->source]); // UF_set함수로 두 정점 연결시키기
+            mst_edge[mst_edge_i++] = edge_arr[edge_arr_i];         // edge_arr에 간선 추가.
+            total_weight += edge_arr[edge_arr_i]->weight;          // total_Weight에 weight 덧셈
         }
-        i++;
+        edge_arr_i++;
     }
 
     printf("---------------------------------------------\n");
-    for (i = 0; i < j; i++)
+    for (int i = 0; i < mst_edge_i; i++) // mst의 edge를 출력하고 total_weight을 출력한다.
     {
-        printf("source: %d\t dest: %d\t weight: %d\n", mst_edge[i]->source, mst_edge[i]->dest_node->id, mst_edge[i]->weight);
+        printf("source: %d\t dest: %d\t weight: %d\n",
+               mst_edge[i]->source, mst_edge[i]->dest_node->id, mst_edge[i]->weight);
     }
     printf("\nTotal weight: %d\n", total_weight);
     printf("---------------------------------------------\n");
@@ -411,8 +476,9 @@ int main()
     add_edge(3, 2, 4);
     add_edge(3, 4, 5);
     add_edge(4, 3, 5);
-    dfs(1); 
-    bfs(1); 
+
+    dfs(1);
+    bfs(1);
 
     mst();
     return 0;
