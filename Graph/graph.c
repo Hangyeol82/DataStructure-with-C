@@ -21,6 +21,13 @@ Copyright (c) 2025 Hangyeol Lee. All rights reserved.
 #define QUEUE_OVERFLOW -1
 #define QUEUE_UNDERFLOW -2
 
+#define ADD 1
+#define DELETE 2
+#define DFS 3
+#define BFS 4
+#define MST 5
+#define QUIT 6
+
 // 간선 노드
 typedef struct AdjNode
 {
@@ -115,7 +122,6 @@ int enqueue(Node *node)
  return: if the queue is empty, return address of QUEUE_UNDERFLOW
          otherwise return address of the first node in queue
 ------------------------------------------------------------------------------*/
-
 Node *dequeue()
 {
     if (front == rear)
@@ -273,7 +279,8 @@ int add_edge(int s, int e, int w)
     }
     else
     {
-        for (cur = start->adjList; cur != NULL; pre = cur, cur = cur->next) // 노드를 삽입할 위치 찾기
+        // 노드를 삽입할 위치 찾기
+        for (cur = start->adjList; cur != NULL; pre = cur, cur = cur->next)
         {
             if (cur->dest_node->id > e)
             {
@@ -297,16 +304,98 @@ int add_edge(int s, int e, int w)
 }
 
 /*------------------------------------------------------------------------
- Function: depth first search in graph
- Interface: void dfs(int id)
- Parameters: int id: the starting node ID for searching
- Return: void
+ Function: delete an edge between nodes
+ Interface: int delete_edge(int s, int e)
+ Parameters: int s: source node ID of edge
+             int e: destination node ID of edge
+ Return: if there is no vertex or edge, return FALSE
+         otherwise, return OK
 ------------------------------------------------------------------------*/
-void dfs(int id)
+int delete_edge(int s, int e)
+{
+    Node *start = find_node(s);
+    Node *end = find_node(e);
+    if (start == NULL || end == NULL) // vertex가 존재하지 않으면 FALSE 리턴
+    {
+        printf("There is no such vertex\n");
+        return FALSE;
+    }
+
+    AdjNode *cur;
+    AdjNode *pre;
+
+    // start vertex에서 삭제할 간선 찾기
+    for (cur = start->adjList; cur != NULL; pre = cur, cur = cur->next)
+    {
+        if (cur->dest_node == end)
+        {
+            break;
+        }
+    }
+    // start -> end 간선 삭제
+    if (cur == NULL) // 간선이 존재하지 않으면 FALSE 리턴
+    {
+        printf("There is no such edge\n");
+        return FALSE;
+    }
+    else
+    {
+        if (cur == start->adjList) // 첫번째 간선을 삭제하는 경우
+        {
+            start->adjList = cur->next;
+        }
+        else // 중간 혹은 마지막 간선 삭제하는 경우
+        {
+            pre->next = cur->next;
+        }
+        free(cur); // 간선 Free
+    }
+
+    // end vertex에서 삭제할 간선 찾기
+    for (cur = end->adjList; cur != NULL; pre = cur, cur = cur->next)
+    {
+        if (cur->dest_node == start)
+        {
+            break;
+        }
+    }
+    // end -> start 간선 삭제
+    if (cur == NULL) // 간선이 존재하지 않으면 FALSE 리턴
+    {
+        printf("There is no such edge\n");
+        return FALSE;
+    }
+    else
+    {
+        if (cur == end->adjList) // 첫번째 간선을 삭제하는 경우
+        {
+            end->adjList = cur->next;
+        }
+        else // 중간 혹은 마지막 간선 삭제하는 경우
+        {
+            pre->next = cur->next;
+        }
+        free(cur); // 간선 Free
+    }
+
+    return OK;
+}
+
+/*------------------------------------------------------------------------
+ Function: depth first search in graph
+ Interface: int dfs(int id)
+ Parameters: int id: the starting node ID for searching
+ Return: if stack is overflowed or underflowed, return FALSE
+         otherwise, return OK
+------------------------------------------------------------------------*/
+int dfs(int id)
 {
     int visited[MAX_VERTEX + 1] = {0};
-    Node *start = find_node(id); // dfs 탐색 시잘할 노드 불러오기
-    push(start);                 // 스택에 노드 Push
+    Node *start = find_node(id);      // dfs 탐색 시잘할 노드 불러오기
+    if (push(start) == STACKOVERFLOW) // 스택에 노드 Push
+    {
+        return FALSE;
+    }
 
     Node *cur;    // 노드를 가르키는 변수
     AdjNode *now; // 노드에 연결된 간선들을 참조할 변수
@@ -314,38 +403,52 @@ void dfs(int id)
     while (top > -1) // 스택이 빌때까지
     {
         cur = pop();
+        if (cur == (Node *)STACKUNDERFLOW)
+        {
+            return FALSE;
+        }
 
         if (visited[cur->id] == 0) // 방문한 적 없으면
         {
             visited[cur->id] = 1; // 방문하니까 1로 변환
             printf("%d ", cur->id);
 
-            for (now = cur->adjList; now != NULL; now = now->next) // 연결된 간선들을 참조하면서 스택에 노드 추가
+            // 연결된 간선들을 참조하면서 스택에 노드 추가
+            for (now = cur->adjList; now != NULL; now = now->next)
             {
                 if (visited[now->dest_node->id] == 1) // 방문했으면 넘어가기
                     continue;
-                else
-                    push(now->dest_node); // 방문하지 않았으면 스택에 Push
+                else if (push(now->dest_node) == STACKOVERFLOW) // 방문하지 않았으면 스택에 Push
+                {
+                    return FALSE;
+                }
             }
         }
     }
     printf("\n");
+
+    return OK;
 }
 
 /*------------------------------------------------------------------------
  Function: breadth first search in graph
- Interface: void bfs(int id)
+ Interface: int bfs(int id)
  Parameters: int id: the starting node ID for searching
- Return: void
+ Return: if stack is overflowed or underflowed
+         or queue is overflowed or underflowed, return FALSE
+         otherwise, return OK
 ------------------------------------------------------------------------*/
-void bfs(int id)
+int bfs(int id)
 {
     int visited[MAX_VERTEX + 1] = {0}; // 모든 노드들의 visited 변수 0으로 초기화
     front = rear = 0;                  // 큐 초기화
 
-    Node *start = find_node(id); // bfs탐색을 시작할 노드 불러오기
-    visited[start->id] = 1;      // 첫번째 노드는 무조건 방문하니 visited 변수 1로 초기화
-    enqueue(start);              // 큐에 첫번째 노드 Enqueue
+    Node *start = find_node(id);          // bfs탐색을 시작할 노드 불러오기
+    visited[start->id] = 1;               // 첫번째 노드는 무조건 방문하니 visited 변수 1로 초기화
+    if (enqueue(start) == QUEUE_OVERFLOW) // 큐에 첫번째 노드 Enqueue
+    {
+        return FALSE;
+    }
 
     Node *cur;    // 노드를 가르키는 변수
     AdjNode *now; // 노드에 연결된 간선들을 가르키는 변수
@@ -354,16 +457,25 @@ void bfs(int id)
     {
         top = -1; // 스택을 사용하므로 스택 초기화
         cur = dequeue();
+        if (cur == (Node *)QUEUE_UNDERFLOW)
+        {
+            return FALSE;
+        }
         printf("%d ", cur->id);
 
-        for (now = cur->adjList; now != NULL; now = now->next) // 연결된 간선들을 확인하면서 스택에 Push
+        // 연결된 간선들을 확인하면서 스택에 Push
+        for (now = cur->adjList; now != NULL; now = now->next)
         {
             if (visited[now->dest_node->id] == 1) // 방문한 적 있으면 넘어가기
                 continue;
             else
             {
-                push(now->dest_node);            // 방문한 적 없으면 Push
-                visited[now->dest_node->id] = 1; // 여기서 visited 값을 1로 변경해야 같은 값이 큐에 들어가지 않음.
+                if (push(now->dest_node) == STACKOVERFLOW) // 방문한 적 없으면 Push
+                {
+                    return STACKOVERFLOW;
+                }
+                // 여기서 visited 값을 1로 변경해야 같은 값이 큐에 들어가지 않음.
+                visited[now->dest_node->id] = 1;
             }
         }
 
@@ -371,10 +483,19 @@ void bfs(int id)
         while (top > -1)
         {
             cur = pop();
-            enqueue(cur);
+            if (cur == (Node *)STACKUNDERFLOW)
+            {
+                return STACKOVERFLOW;
+            }
+            if (enqueue(cur) == QUEUE_OVERFLOW)
+            {
+                return FALSE;
+            }
         }
     }
     printf("\n");
+
+    return OK;
 }
 
 /*------------------------------------------------------------------------
@@ -398,6 +519,7 @@ int compare_edge(const void *a, const void *b)
     else
         return 0;
 }
+
 /*------------------------------------------------------------------------
  Function: print all edges of a minimum spanning tree and total weight of mst
  Interface: void mst()
@@ -462,24 +584,159 @@ void mst()
     printf("---------------------------------------------\n");
 }
 
+/*------------------------------------------------------------------------
+ Function: free all node in graph
+ Interface: void free_graph()
+ Parameters: None
+ Return: void
+------------------------------------------------------------------------*/
+void free_graph()
+{
+    Node *vertex;
+    Node *pre_vertex = NULL;
+
+    AdjNode *cur;
+    AdjNode *pre = NULL;
+    // 모든 Vertex free
+    for (vertex = g->head; vertex != NULL; vertex = vertex->next)
+    {
+        // vertex의 모든 edge free
+        for (cur = vertex->adjList; cur != NULL; pre = cur, cur = cur->next)
+        {
+            free(pre);
+        }
+        free(cur);
+
+        free(pre_vertex);
+        pre_vertex = vertex;
+    }
+    free(vertex);
+}
+
 int main()
 {
     g = malloc(sizeof(Graph));
     g->head = NULL;
     g->tail = NULL;
 
-    add_edge(1, 2, 3);
-    add_edge(2, 1, 3);
-    add_edge(1, 2, 1);
-    add_edge(2, 1, 1);
-    add_edge(2, 3, 4);
-    add_edge(3, 2, 4);
-    add_edge(3, 4, 5);
-    add_edge(4, 3, 5);
+    int command;
+    int ret;
 
-    dfs(1);
-    bfs(1);
+    do
+    {
+        printf("----------------------------------------------------------------\n");
+        printf("                            graph                               \n");
+        printf("----------------------------------------------------------------\n");
+        printf(" Add Edge       = 1           Delete Edge    = 2 \n");
+        printf(" Dfs            = 3           Bfs            = 4 \n");
+        printf(" MST            = 5           Quit           = 6 \n");
+        printf("----------------------------------------------------------------\n");
 
-    mst();
-    return 0;
+        printf("Command = ");
+        while (scanf("%d", &command) != 1) // 입력값이 정수가 아닐 경우
+        {
+            printf("Wrong Input!\nInput command again = ");
+            while (getchar() != '\n')
+                ; // 입력 버퍼 비우기
+        }
+
+        switch (command)
+        {
+        case ADD: // 1
+        {
+            int s; // 간선 시작 지점
+            int d; // 간선 끝나는 지점
+            int w; // weight
+
+            printf("Input source, destination and weight :");
+            while (scanf("%d %d %d", &s, &d, &w) != 3) // 입력값이 정수가 아닐 경우
+            {
+                printf("Wrong Input!\nInput command again = ");
+                while (getchar() != '\n')
+                    ; // 입력 버퍼 비우기
+            }
+
+            add_edge(s, d, w);
+            break;
+        }
+        case DELETE: // 2
+        {
+            int s; // 간선 시작 지점
+            int d; // 간선 끝나는 지점
+
+            printf("Input source and destination :");
+            while (scanf("%d %d", &s, &d) != 2) // 입력값이 정수가 아닐 경우
+            {
+                printf("Wrong Input!\nInput command again = ");
+                while (getchar() != '\n')
+                    ; // 입력 버퍼 비우기
+            }
+
+            if (delete_edge(s, d) == FALSE)
+            {
+                printf("delete_edge() is failed\n");
+            }
+            else
+            {
+                printf("delete_edge() is complete\n");
+            }
+            break;
+        }
+        case DFS: // 3
+        {
+            int start; // dfs 시작 지점
+
+            printf("Input the start point of dfs: ");
+            while (scanf("%d", &start) != 1)
+            {
+                printf("Wrong Input!\nInput command again = ");
+                while (getchar() != '\n')
+                    ; // 입력 버퍼 비우기
+            }
+
+            if (dfs(start) == FALSE)
+            {
+                printf("dfs() is failed\n");
+            }
+            else
+            {
+                printf("dfs() is complete\n");
+            }
+            break;
+        }
+        case BFS: // 4
+        {
+            int start; // dfs 시작 지점
+
+            printf("Input the start point of bfs: ");
+            while (scanf("%d", &start) != 1)
+            {
+                printf("Wrong Input!\nInput command again = ");
+                while (getchar() != '\n')
+                    ; // 입력 버퍼 비우기
+            }
+
+            if (bfs(start) == FALSE)
+            {
+                printf("bfs() is failed\n");
+            }
+            else
+            {
+                printf("bfs() is complete\n");
+            }
+            break;
+        }
+        case MST: // 5
+        {
+            mst();
+            break;
+        }
+        case QUIT: // 6
+            free_graph();
+            break;
+        default:
+            printf("\n       >>>>>   Concentration!!   <<<<<      \n");
+            break;
+        }
+    } while (command != QUIT);
 }
