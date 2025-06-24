@@ -593,24 +593,25 @@ void mst()
 void free_graph()
 {
     Node *vertex;
-    Node *pre_vertex = NULL;
+    Node *pre_vertex;
 
     AdjNode *cur;
-    AdjNode *pre = NULL;
+    AdjNode *pre;
     // 모든 Vertex free
-    for (vertex = g->head; vertex != NULL; vertex = vertex->next)
+    for (vertex = g->head, pre_vertex = NULL; vertex != NULL; pre_vertex = vertex, vertex = vertex->next)
     {
         // vertex의 모든 edge free
-        for (cur = vertex->adjList; cur != NULL; pre = cur, cur = cur->next)
+        for (cur = vertex->adjList, pre = NULL; cur != NULL; pre = cur, cur = cur->next)
         {
             free(pre);
         }
-        free(cur);
+        free(pre);
 
         free(pre_vertex);
-        pre_vertex = vertex;
     }
-    free(vertex);
+    free(pre_vertex);
+
+    free(g);
 }
 
 int main()
@@ -657,6 +658,7 @@ int main()
             }
 
             add_edge(s, d, w);
+            add_edge(d, s, w);
             break;
         }
         case DELETE: // 2
