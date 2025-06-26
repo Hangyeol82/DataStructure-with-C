@@ -391,6 +391,8 @@ int delete_edge(int s, int e)
 int dfs(int id)
 {
     int visited[MAX_VERTEX + 1] = {0};
+    top = -1; // 스택 초기화
+
     Node *start = find_node(id);      // dfs 탐색 시잘할 노드 불러오기
     if (push(start) == STACKOVERFLOW) // 스택에 노드 Push
     {
