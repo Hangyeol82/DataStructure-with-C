@@ -4,11 +4,19 @@
 
 #define OK 1
 #define FAIL 0
-#define START 0
 #define FILENAME "bst.bin"
 
-int insert_loc = START;
-int deleted_loc = -1;
+#define MAX_STACK_SIZE 100
+#define STACKOVERFLOW -1
+#define STACKUNDERFLOW -2
+
+#define MAX_QUEUE_SIZE 100
+#define QUEUE_OVERFLOW -1
+#define QUEUE_UNDERFLOW -2
+
+int root_loc = 0;   // root node의 위치
+int insert_loc = 0; // Insert 하는 위치
+int free_loc = -1;  // Free한 노드 위치
 
 typedef struct Node
 {
@@ -19,6 +27,12 @@ typedef struct Node
 } Node;
 
 const int Node_size = sizeof(Node); // 구조체 Node의 크기
+
+typedef struct FreeNode
+{
+    int next;                              // 다음 Free node 위치
+    char padding[Node_size - sizeof(int)]; // Node크기 맞추기 위한 Padding
+} FreeNode;
 
 /* 바이너리 파일:
     .bin 확장자로 끝나는 파일, 이진 데이터를 저장하여 그냥 열면 읽을 수 없다
@@ -32,7 +46,111 @@ const int Node_size = sizeof(Node); // 구조체 Node의 크기
            - origin에서부터 원하는 offset만큼 떨어진 위치로 파일 포인터를 옮겨준다
     size_t fwrite(const void *ptr, size_t size, size_t count, FILE *stream)
            - 파일 포인터가 가르키는 위치에 size크기만큼 count개수의 정보를 덮어쓴다.
+
+    size_t: 양의 정수형 typedef로 정의되어 있는데
+            운영체제나 컴파일러에 따라 int, long ,long long에 매핑
 */
+
+int stack[MAX_STACK_SIZE];
+int top = -1;
+
+/*-------------------------------------------------------------------------------------
+ Function: 스택에 노드의 위치를 추가한다
+ Interface: int push(int loc)
+ Parameter: int loc: location of a node in bin file
+ return:  if the pushing is complete, return OK
+          if the stack is full, return STACKOVERFLOW
+-------------------------------------------------------------------------------------*/
+int push(int loc)
+{
+    if (top + 1 >= MAX_STACK_SIZE)
+        return STACKOVERFLOW;
+    else
+    {
+        stack[++top] = loc;
+        return OK;
+    }
+}
+
+/*-------------------------------------------------------------------------------------
+ Function: 스택에서 top이 가르키는 최상위 원소를 리턴한다
+ Interface: int pop()
+ Paramete: None
+ return: if error, return STACKUNDERFLOW
+         otherwise return location of a node in bin file
+-------------------------------------------------------------------------------------*/
+int pop()
+{
+    if (top <= -1)
+        return STACKUNDERFLOW;
+    else
+    {
+        return stack[top--];
+    }
+}
+
+int queue[MAX_QUEUE_SIZE];
+int front = 0;
+int rear = 0;
+
+/*------------------------------------------------------------------------------
+ Function: 큐에 노드의 위치를 추가하고 rear의 값에 +1 연산을 수행한다
+ Interface: int enqueue(int loc)
+ Parameter: int loc = location of a node in bin file
+ return: if the queue is full, return QUEUE_OVERFLOW
+         otherwise return OK.
+------------------------------------------------------------------------------*/
+int enqueue(int loc)
+{
+    if (rear >= MAX_QUEUE_SIZE)
+        return QUEUE_OVERFLOW;
+    else
+    {
+        queue[rear++] = loc;
+        return OK;
+    }
+}
+
+/*------------------------------------------------------------------------------
+ Function: 큐의 front가 가르키는 원소를 출력한다
+ Interface: int dequeue()
+ Parameter: None
+ return: if the queue is empty, return QUEUE_UNDERFLOW
+         otherwise return location of a node in bin file
+------------------------------------------------------------------------------*/
+int dequeue()
+{
+    if (front == rear)
+        return QUEUE_UNDERFLOW;
+    else
+    {
+        return queue[front++];
+    }
+}
+
+/*------------------------------------------------------------------------------
+ Function: initialize bin file and location variable
+ Interface: void initialize_tree()
+ Parameter: None
+ return: void
+------------------------------------------------------------------------------*/
+void initialize_tree()
+{
+    FILE *tree = fopen(FILENAME, "wb");
+    insert_loc = 0;
+    free_loc = -1;
+    root_loc = 0;
+    fclose(tree);
+}
+
+/*------------------------------------------------------------------------------
+ Function: insert a node in a binary search tree
+ Interface: int insert(int num, char name[])
+ Parameter: int num: number of student
+            char name[]: name of student
+ return: if duplicate id is inserted, return FAIL
+         otherwiser, return OK
+------------------------------------------------------------------------------*/
 int insert(int num, char name[])
 {
     FILE *tree = fopen(FILENAME, "r+b"); // 읽기+쓰기 모드 기존의 데이터 유지
@@ -53,39 +171,22 @@ int insert(int num, char name[])
 
     Node now_node; // edge를 추가할 노드
 
-    int tmp; // insert_loc값을 바꿔줄 변수 & deleted_loc의 값이 -1인지 확인. 만약 -1이면 삭제된 부분이 다 채워진다는 뜻
     /*
-     노드를 삽입하는 과정
-     inset_loc위치에 노드를 삽입하고 insert_loc의 값을 수정
+     다음부터 삽입한 노드의 부모 노드의 left or right를 수정.
     */
-    fseek(tree, Node_size * insert_loc, SEEK_SET); // insert_loc에 해당하는 위치로 이동
-    fread(&tmp, sizeof(int), 1, tree);             // tmp에 insert_loc가 가르키는 위치의 값 저장
-    printf("tmp : %d\n", tmp);
-    if (tmp == -1)
+    if (size != 0) // 트리가 비어있지 않을때
     {
-        deleted_loc = -1; // 삭제된 부분이 다 채워졌으면 deleted_loc를 -1로 바꿈
-    }
-
-    fseek(tree, Node_size * insert_loc, SEEK_SET); // insert_loc의 위치로 이동
-    fwrite(&new_node, Node_size, 1, tree);         // 새로운 노드 추가
-
-    /*
-     삽입한 노드의 부모 노드의 left or right를 수정.
-    */
-
-    if (size != START) // 트리가 비어있지 않을때
-    {
-        int loc = START; // 시작 위치
-        while (1)
+        int loc = root_loc; // 시작 위치
+        while (1)           // 삽입할 노드의 부모를 찾아 수정하는 로직 루프
         {
             fseek(tree, loc * Node_size, SEEK_SET); // loc의 위치의 노드 찾기
             fread(&now_node, Node_size, 1, tree);   // 그 위치의 노드 구조체 now_node에 읽어오기
 
             /* fread를 하면 자동으로 파일포인터는 다음노드를 가르킨다 그러므로
                fwrite함수 전에 fseek함수로 파일포인터를 재조정 해야한다.     */
-            if (now_node.num <= num) // 우측 노드 방향
+            if (now_node.num < num) // 우측 노드 방향
             {
-                if (now_node.right == -1)
+                if (now_node.right == -1) // 우측에 노드가 없음. 삽입할 차레
                 {
                     now_node.right = insert_loc;
                     fseek(tree, loc * Node_size, SEEK_SET);
@@ -94,9 +195,9 @@ int insert(int num, char name[])
                 }
                 loc = now_node.right; // 탐색할 위치 오른쪽으로 바꾸기
             }
-            else // 좌측 노드 방향
+            else if (now_node.num > num) // 좌측 노드 방향
             {
-                if (now_node.left == -1)
+                if (now_node.left == -1) // 좌측에 노드가 없음. 삽입할 차레
                 {
                     now_node.left = insert_loc;
                     fseek(tree, loc * Node_size, SEEK_SET);
@@ -105,9 +206,31 @@ int insert(int num, char name[])
                 }
                 loc = now_node.left; // 탐색할 위치 왼쪽으로 비꾸기
             }
+            else // 노드 Id의 중복은 허용하지 않음.
+            {
+                printf("Duplicate Id is not allowed\n");
+                fclose(tree);
+
+                return FAIL;
+            }
         }
     }
-    if (deleted_loc == -1) // deleted_loc가 -1이면 삭제된 부분이 다 채워졌다는 뜻
+
+    int tmp; // insert_loc값을 바꿔줄 변수 & free_loc의 값이 -1인지 확인. 만약 -1이면 삭제된 부분이 다 채워진다는 뜻
+    /*
+     노드를 삽입하는 과정
+     inset_loc위치에 노드를 삽입하고 insert_loc의 값을 수정
+    */
+    fseek(tree, Node_size * insert_loc, SEEK_SET); // insert_loc에 해당하는 위치로 이동
+    fread(&tmp, sizeof(int), 1, tree);             // tmp에 insert_loc가 가르키는 위치의 값 저장
+    if (tmp == -1)
+    {
+        free_loc = -1; // 삭제된 부분이 다 채워졌으면 free_loc를 -1로 바꿈
+    }
+    fseek(tree, Node_size * insert_loc, SEEK_SET); // insert_loc의 위치로 이동
+    fwrite(&new_node, Node_size, 1, tree);         // 새로운 노드 추가
+
+    if (free_loc == -1) // free_loc가 -1이면 삭제된 부분(중간 중간 빈 공간) 이 다 채워졌다는 뜻
     {
         fseek(tree, 0, SEEK_END);             // 끝 쪽으로 이동
         insert_loc = ftell(tree) / Node_size; // 끝의 위치로 insert_loc 업데이트
@@ -117,33 +240,42 @@ int insert(int num, char name[])
         insert_loc = tmp; // insert_loc 업데이트
     }
     fclose(tree);
+
     return OK;
 }
 
+/*------------------------------------------------------------------------------
+ Function: Delete a node in a binary search tree
+ Interface: int delete(int num)
+ Parameter: int num: a number of a student
+ return: if a tree or a specific node doesn't exist, return FAIL
+         otherwiser, return OK
+------------------------------------------------------------------------------*/
 int delete(int num)
 {
     FILE *tree = fopen(FILENAME, "r+b");
     if (tree == NULL)
     {
         printf("Error opening file in delete()\n");
-        return FAIL;
+        exit(1);
     }
-
-    int none = -1; // 삭제 노드에 대신 저장할 값
 
     fseek(tree, 0, SEEK_END); // 파일 끝으로 이동
     int size = ftell(tree);   // 파일 크기 (START이면 파일이 비어있다)
 
-    if (size == START) // 파일이 비어있을 경우
+    if (size == 0) // 파일이 비어있을 경우
     {
-        printf("There is no such node!\n");
+        printf("There is no such tree!\n");
         fclose(tree);
         return FAIL;
     }
 
     Node now_node;       // 탐색할 노드의 정보를 저장할 노드
-    int loc = START;     // 탐색할 노드의 위치
+    int loc = root_loc;  // 탐색할 노드의 위치
     int parent_loc = -1; // 삭제할 노드의 부모 노드 위치
+
+    FreeNode free_node;  // Free한 위치를 수정하기 위한 변수
+    free_node.next = -1; // 제일 최근에 삭제한 노드는 Next를 -1로 하여 연결리스트의 마지막임을 알림
 
     while (1) // 삭제할 노드를 찾는 과정
     {
@@ -153,14 +285,12 @@ int delete(int num)
             fclose(tree);
             return FAIL;
         }
-        fseek(tree, loc * Node_size, SEEK_SET); // loc의 위치의 노드 찾기
-        fread(&now_node, Node_size, 1, tree);   // 그 위치의 노드를 now_node에 읽어오기
 
         if (now_node.num == num) // 삭제할 노드를 찾은 경우
         {
             if (now_node.left == -1 && now_node.right == -1) // 자식이 없는 경우
             {
-                if (parent_loc != -1) // 부모 노드가 존재할 경우
+                if (parent_loc != -1) // 부모 노드가 존재할 경우 부모노드 수정
                 {
                     Node parent;
                     fseek(tree, parent_loc * Node_size, SEEK_SET);
@@ -174,15 +304,26 @@ int delete(int num)
                     fseek(tree, parent_loc * Node_size, SEEK_SET);
                     fwrite(&parent, Node_size, 1, tree);
                 }
+                else // 루트 노드를 지우면 그냥 초기화
+                {
+                    initialize_tree();
+                    break;
+                }
 
-                // 삭제 연결 리스트에 노드 추가
+                /* 삭제 연결 리스트에 노드 추가 */
+                // 삭제한 위치에 -1 저장하면서 삭제 연결리스트의 마지막임을 알림
                 fseek(tree, loc * Node_size, SEEK_SET);
-                fwrite(&none, sizeof(int), 1, tree);
-                fseek(tree, deleted_loc * Node_size, SEEK_SET);
-                fwrite(&loc, sizeof(int), 1, tree);
-                if (deleted_loc == -1)
+                fwrite(&free_node, sizeof(FreeNode), 1, tree);
+                // 원래 삭제 연결리스트의 마지막이었던 free_loc에 방금 삭제한 Loc의 위치를 가르키게 함
+                if (free_loc != -1)
+                {
+                    free_node.next = loc;
+                    fseek(tree, free_loc * Node_size, SEEK_SET);
+                    fwrite(&free_node, sizeof(FreeNode), 1, tree);
+                }
+                if (free_loc == -1)
                     insert_loc = loc;
-                deleted_loc = loc;
+                free_loc = loc;
 
                 break;
             }
@@ -226,19 +367,26 @@ int delete(int num)
                 {
                     // 삭제할 노드에 가장 작은 노드의 값 복사
                     now_node.num = smallest.num;
+                    strcpy(now_node.name, smallest.name);
                     now_node.right = -1;
                     fseek(tree, loc * Node_size, SEEK_SET);
                     fwrite(&now_node, Node_size, 1, tree);
                 }
 
-                // 삭제 연결 리스트에 추가
+                /* 삭제 연결 리스트에 노드 추가 */
+                // 삭제한 위치에 -1 저장하면서 삭제 연결리스트의 마지막임을 알림
                 fseek(tree, loc2 * Node_size, SEEK_SET);
-                fwrite(&none, sizeof(int), 1, tree);
-                fseek(tree, deleted_loc * Node_size, SEEK_SET);
-                fwrite(&loc2, sizeof(int), 1, tree);
-                if (deleted_loc == -1)
+                fwrite(&free_node, sizeof(FreeNode), 1, tree);
+                // 원래 삭제 연결리스트의 마지막이었던 free_loc에 방금 삭제한 Loc의 위치를 가르키게 함
+                if (free_loc != -1)
+                {
+                    free_node.next = loc2;
+                    fseek(tree, free_loc * Node_size, SEEK_SET);
+                    fwrite(&free_node, sizeof(FreeNode), 1, tree);
+                }
+                if (free_loc == -1)
                     insert_loc = loc2; // 위치기 바뀌었기에 Loc2로 초기화
-                deleted_loc = loc2;
+                free_loc = loc2;
 
                 break;
             }
@@ -248,27 +396,36 @@ int delete(int num)
 
                 if (parent_loc != -1) // 부모 노드가 존재할 경우
                 {
+                    // parent 변수에 부모 노드 fread
                     Node parent;
                     fseek(tree, parent_loc * Node_size, SEEK_SET);
                     fread(&parent, Node_size, 1, tree);
-
+                    // 부모노드 수정
                     if (parent.left == loc)
                         parent.left = child_loc;
                     else
                         parent.right = child_loc;
-
+                    // 수정한거 fwrite
                     fseek(tree, parent_loc * Node_size, SEEK_SET);
                     fwrite(&parent, Node_size, 1, tree);
                 }
+                else // 루트 노드를 삭제하면 root_loc를 수정해야 함
+                    root_loc = child_loc;
 
-                // 삭제 연결 리스트에 추가
+                /* 삭제 연결 리스트에 노드 추가 */
+                // 삭제한 위치에 -1 저장하면서 삭제 연결리스트의 마지막임을 알림
                 fseek(tree, loc * Node_size, SEEK_SET);
-                fwrite(&none, sizeof(int), 1, tree);
-                fseek(tree, deleted_loc * Node_size, SEEK_SET);
-                fwrite(&loc, sizeof(int), 1, tree);
-                if (deleted_loc == -1)
+                fwrite(&free_node, sizeof(FreeNode), 1, tree);
+                // 원래 삭제 연결리스트의 마지막이었던 free_loc에 방금 삭제한 Loc의 위치를 가르키게 함
+                if (free_loc != -1)
+                {
+                    free_node.next = loc;
+                    fseek(tree, free_loc * Node_size, SEEK_SET);
+                    fwrite(&free_node, sizeof(FreeNode), 1, tree);
+                }
+                if (free_loc == -1)
                     insert_loc = loc;
-                deleted_loc = loc;
+                free_loc = loc;
 
                 break;
             }
@@ -289,6 +446,157 @@ int delete(int num)
     return OK;
 }
 
+/*------------------------------------------------------------------------------
+ Function: depth first search in binary seach tree
+ Interface: int dfs()
+ Parameter: None
+ return: if a tree doesn't exist, return FIAL
+         otherwise. return OK
+------------------------------------------------------------------------------*/
+int dfs()
+{
+    FILE *tree = fopen(FILENAME, "r+b"); // 읽기+쓰기 모드 기존의 데이터 유지
+    if (tree == NULL)
+    {
+        printf("Error in dfs()\n");
+        exit(1);
+    }
+
+    fseek(tree, 0, SEEK_END); // 파일 끝으로 이동
+    if (!ftell(tree))         // 파일 크기 (0이면 파일이 비어있다)
+    {
+        printf("There is no tree\n");
+        return FAIL;
+    }
+
+    top = -1;
+    int loc = root_loc;
+    Node cur;
+
+    if (push(loc) == STACKOVERFLOW)
+    {
+        printf("StackOverflow in dfs()\n");
+        return FAIL;
+    }
+
+    printf("------------dfs------------\n");
+    while (top != -1)
+    {
+        loc = pop();
+        if (loc == STACKUNDERFLOW)
+        {
+            printf("StackUnderflow in dfs()\n");
+            return FAIL;
+        }
+
+        fseek(tree, loc * Node_size, SEEK_SET);
+        fread(&cur, Node_size, 1, tree);
+
+        printf("\t%d\t%s\n", cur.num, cur.name);
+
+        if (cur.right != -1)
+        {
+            loc = cur.right;
+            if (push(loc) == STACKOVERFLOW)
+            {
+                printf("StackOverflow in dfs()\n");
+                return FAIL;
+            }
+        }
+        if (cur.left != -1)
+        {
+            loc = cur.left;
+            if (push(loc) == STACKOVERFLOW)
+            {
+                printf("StackOverflow in dfs()\n");
+                return FAIL;
+            }
+        }
+    }
+    printf("---------------------------\n");
+
+    fclose(tree);
+    return OK;
+}
+
+/*------------------------------------------------------------------------------
+ Function: breath first search in binary seach tree
+ Interface: int bfs()
+ Parameter: None
+ return: if a tree doesn't exist, return FIAL
+         otherwise. return OK
+------------------------------------------------------------------------------*/
+int bfs()
+{
+    FILE *tree = fopen(FILENAME, "r+b"); // 읽기+쓰기 모드 기존의 데이터 유지
+    if (tree == NULL)
+    {
+        printf("Error in bfs()\n");
+        exit(1);
+    }
+
+    fseek(tree, 0, SEEK_END); // 파일 끝으로 이동
+    if (!ftell(tree))         // 파일 크기 (0이면 파일이 비어있다)
+    {
+        printf("There is no tree\n");
+        return FAIL;
+    }
+
+    front = rear = 0;
+    int loc = root_loc;
+    Node cur;
+
+    if (enqueue(loc) == QUEUE_OVERFLOW)
+    {
+        printf("QueueOverflow in bfs()\n");
+        return FAIL;
+    }
+
+    printf("------------bfs------------\n");
+    while (front != rear)
+    {
+        loc = dequeue();
+        if (loc == QUEUE_UNDERFLOW)
+        {
+            printf("QueueUnderflow in bfs()\n");
+            return FAIL;
+        }
+        fseek(tree, loc * Node_size, SEEK_SET);
+        fread(&cur, Node_size, 1, tree);
+        printf("\t%d\t%s\n", cur.num, cur.name);
+
+        if (cur.left != -1)
+        {
+            enqueue(cur.left);
+            if (enqueue(loc) == QUEUE_OVERFLOW)
+            {
+                printf("QueueOverflow in bfs()\n");
+                return FAIL;
+            }
+        }
+        if (cur.right != -1)
+        {
+            enqueue(cur.right);
+            if (enqueue(loc) == QUEUE_OVERFLOW)
+            {
+                printf("QueueOverflow in bfs()\n");
+                return FAIL;
+            }
+        }
+    }
+    printf("---------------------------\n");
+
+    fclose(tree);
+    return OK;
+}
+
+/*------------------------------------------------------------------------------
+ Function: A debugging function that prints the nodes
+           in the order they are stored in the file
+ Interface: void print_tree()
+ Parameter: None
+ return: void
+------------------------------------------------------------------------------*/
 void print_tree()
 {
     FILE *tree = fopen(FILENAME, "r+b");
@@ -302,19 +610,47 @@ void print_tree()
         printf("%d\t%d\t%d\n", node.num, node.left, node.right);
         line++;
     }
-    printf("%d %d\n", insert_loc, deleted_loc);
-    fclose(tree);
-}
-
-void initialize_tree()
-{
-    FILE *tree = fopen(FILENAME, "wb");
-    insert_loc = START;
-    deleted_loc = -1;
+    printf("insert location: %d\nfree location: %d\nroot location: %d\n", insert_loc, free_loc, root_loc);
     fclose(tree);
 }
 
 int main()
 {
-    initialize_tree();
+    initialize_tree(); // 트리 초기화
+
+    // 노드 깊이를 늘리기 위해 한쪽으로 치우친 값도 넣고,
+    // 좌우 균형도 체크할 수 있게 다양하게 섞어서 삽입합니다.
+    insert(50, "A"); // 루트
+    insert(40, "B"); // 루트의 왼쪽
+    insert(30, "C"); // 계속 왼쪽 (깊이 증가)
+    insert(20, "D");
+    insert(10, "E");
+    insert(5, "F");
+    insert(2, "G");
+    insert(1, "H"); // 깊이: 8
+
+    // 오른쪽에도 살짝 넣어서 균형 확인
+    insert(60, "I");
+    insert(55, "J");
+    insert(57, "K");
+    insert(65, "L");
+    insert(70, "M");
+    insert(80, "N");
+
+    // 중간값도 좀 넣어서 가지 치기
+    insert(25, "O");
+    insert(35, "P");
+    insert(45, "Q");
+
+    // 트리 구조 출력
+    printf("\n--- print_tree() ---\n");
+    print_tree();
+
+    // 깊이 우선 탐색
+    dfs();
+
+    // 너비 우선 탐색
+    bfs();
+
+    return 0;
 }
