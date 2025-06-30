@@ -3,7 +3,7 @@ File Name: binary_serach_tree.c
 Programmed by: Hangyeol Lee
 Affiliation: Chungbuk University
 Functions: insert(), delete(), retrieve(), update(),
-           dfs(), bfs() in graph
+           dfs(), bfs() in BST
 Copyright (c) 2025 Hangyeol Lee. All rights reserved.
 ---------------------------------------------------------------------*/
 #include <stdio.h>
