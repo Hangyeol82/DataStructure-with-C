@@ -1,3 +1,11 @@
+/*---------------------------------------------------------------------
+File Name: binary_serach_tree.c
+Programmed by: Hangyeol Lee
+Affiliation: Chungbuk University
+Functions: insert(), delete(), retrieve(), update(),
+           dfs(), bfs() in graph
+Copyright (c) 2025 Hangyeol Lee. All rights reserved.
+---------------------------------------------------------------------*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,6 +21,14 @@
 #define MAX_QUEUE_SIZE 100
 #define QUEUE_OVERFLOW -1
 #define QUEUE_UNDERFLOW -2
+
+#define INSERT 1
+#define DELETE 2
+#define RETRIEVE 3
+#define UPDATE 4
+#define DFS 5
+#define BFS 6
+#define QUIT 7
 
 int root_loc = 0;   // root node의 위치
 int insert_loc = 0; // Insert 하는 위치
@@ -245,6 +261,134 @@ int insert(int num, char name[])
 }
 
 /*------------------------------------------------------------------------------
+ Function: Retrieve a node with certain id
+ Interface: int retrieve(int num)
+ Parameter: int num: a number of a student
+ return: if a tree or a specific node doesn't exist, return FAIL
+         otherwiser, return OK
+------------------------------------------------------------------------------*/
+int retrieve(int num)
+{
+    FILE *tree = fopen(FILENAME, "r+b"); // 읽기+쓰기 모드 기존의 데이터 유지
+    if (tree == NULL)
+    {
+        printf("Error in insert()\n");
+        exit(1);
+    }
+
+    fseek(tree, 0, SEEK_END); // 파일 끝으로 이동
+    int size = ftell(tree);   // 파일 크기 (0이면 파일이 비어있다)
+
+    Node cur; // edge를 추가할 노드
+
+    if (size != 0) // 트리가 비어있지 않을때
+    {
+        int loc = root_loc; // 시작 위치
+        while (1)           // 삽입할 노드의 부모를 찾아 수정하는 로직 루프
+        {
+            if (loc == -1) // 노드가 존재하지 않음
+            {
+                printf("There is no such node!\n");
+                fclose(tree);
+                return FAIL;
+            }
+
+            fseek(tree, loc * Node_size, SEEK_SET); // loc의 위치의 노드 찾기
+            fread(&cur, Node_size, 1, tree);        // 그 위치의 노드 구조체 cur에 읽어오기
+
+            if (cur.num < num) // 우측 노드 방향
+            {
+                loc = cur.right; // 탐색할 위치 오른쪽으로 바꾸기
+            }
+            else if (cur.num > num) // 좌측 노드 방향
+            {
+                loc = cur.left; // 탐색할 위치 왼쪽으로 비꾸기
+            }
+            else // 노드 찾기 성공
+            {
+                printf("Id: %d\tName: %s\n", cur.num, cur.name);
+                fclose(tree);
+
+                return OK;
+            }
+        }
+    }
+    else // 트리가 비어있을 때
+    {
+        printf("There is no Tree!\n");
+        fclose(tree);
+
+        return FAIL;
+    }
+}
+
+/*------------------------------------------------------------------------------
+ Function: Delete a node in a binary search tree
+ Interface: int delete(int num)
+ Parameter: int num: a number of a student
+ return: if a tree or a specific node doesn't exist, return FAIL
+         otherwiser, return OK
+------------------------------------------------------------------------------*/
+int update(int num, char name[])
+{
+    FILE *tree = fopen(FILENAME, "r+b"); // 읽기+쓰기 모드 기존의 데이터 유지
+    if (tree == NULL)
+    {
+        printf("Error in insert()\n");
+        exit(1);
+    }
+
+    fseek(tree, 0, SEEK_END); // 파일 끝으로 이동
+    int size = ftell(tree);   // 파일 크기 (0이면 파일이 비어있다)
+
+    Node cur; // edge를 추가할 노드
+
+    if (size != 0) // 트리가 비어있지 않을때
+    {
+        int loc = root_loc; // 시작 위치
+        while (1)           // 삽입할 노드의 부모를 찾아 수정하는 로직 루프
+        {
+            if (loc == -1) // 노드가 존재하지 않음
+            {
+                printf("There is no such node!\n");
+                fclose(tree);
+                return FAIL;
+            }
+
+            fseek(tree, loc * Node_size, SEEK_SET); // loc의 위치의 노드 찾기
+            fread(&cur, Node_size, 1, tree);        // 그 위치의 노드 구조체 cur에 읽어오기
+
+            if (cur.num < num) // 우측 노드 방향
+            {
+                loc = cur.right; // 탐색할 위치 오른쪽으로 바꾸기
+            }
+            else if (cur.num > num) // 좌측 노드 방향
+            {
+                loc = cur.left; // 탐색할 위치 왼쪽으로 비꾸기
+            }
+            else // 노드 찾기 성공
+            {
+                strcpy(cur.name, name);                 // 노드 Update
+                fseek(tree, loc * Node_size, SEEK_SET); // 위치 재조정 (fread로 파일포인터 위치 변경됨)
+                fwrite(&cur, Node_size, 1, tree);       // 덮어쓰기
+
+                printf("Id: %d\tName: %s\n", cur.num, cur.name); // 바뀐 노드 출력
+                fclose(tree);
+
+                return OK;
+            }
+        }
+    }
+    else // 트리가 비어있을 때
+    {
+        printf("There is no Tree!\n");
+        fclose(tree);
+
+        return FAIL;
+    }
+}
+
+/*------------------------------------------------------------------------------
  Function: Delete a node in a binary search tree
  Interface: int delete(int num)
  Parameter: int num: a number of a student
@@ -279,12 +423,15 @@ int delete(int num)
 
     while (1) // 삭제할 노드를 찾는 과정
     {
-        if (loc == -1)
+        if (loc == -1) // 노드가 존재하지 않음
         {
             printf("There is no such node!\n");
             fclose(tree);
             return FAIL;
         }
+
+        fseek(tree, loc * Node_size, SEEK_SET);
+        fread(&now_node, Node_size, 1, tree);
 
         if (now_node.num == num) // 삭제할 노드를 찾은 경우
         {
@@ -567,8 +714,7 @@ int bfs()
 
         if (cur.left != -1)
         {
-            enqueue(cur.left);
-            if (enqueue(loc) == QUEUE_OVERFLOW)
+            if (enqueue(cur.left) == QUEUE_OVERFLOW)
             {
                 printf("QueueOverflow in bfs()\n");
                 return FAIL;
@@ -576,8 +722,7 @@ int bfs()
         }
         if (cur.right != -1)
         {
-            enqueue(cur.right);
-            if (enqueue(loc) == QUEUE_OVERFLOW)
+            if (enqueue(cur.right) == QUEUE_OVERFLOW)
             {
                 printf("QueueOverflow in bfs()\n");
                 return FAIL;
@@ -618,39 +763,151 @@ int main()
 {
     initialize_tree(); // 트리 초기화
 
-    // 노드 깊이를 늘리기 위해 한쪽으로 치우친 값도 넣고,
-    // 좌우 균형도 체크할 수 있게 다양하게 섞어서 삽입합니다.
-    insert(50, "A"); // 루트
-    insert(40, "B"); // 루트의 왼쪽
-    insert(30, "C"); // 계속 왼쪽 (깊이 증가)
-    insert(20, "D");
-    insert(10, "E");
-    insert(5, "F");
-    insert(2, "G");
-    insert(1, "H"); // 깊이: 8
+    int command;
+    do
+    {
+        printf("----------------------------------------------------------------\n");
+        printf("                      binary serach tree                        \n");
+        printf("----------------------------------------------------------------\n");
+        printf(" Add Node       = 1           Delete Node    = 2 \n");
+        printf(" Retrieve Node  = 3           Update Node    = 4 \n");
+        printf(" Dfs            = 5           Bfs            = 6 \n");
+        printf(" Quit           = 7 \n");
+        printf("----------------------------------------------------------------\n");
 
-    // 오른쪽에도 살짝 넣어서 균형 확인
-    insert(60, "I");
-    insert(55, "J");
-    insert(57, "K");
-    insert(65, "L");
-    insert(70, "M");
-    insert(80, "N");
+        printf("Command = ");
+        while (scanf("%d", &command) != 1) // 입력값이 정수가 아닐 경우
+        {
+            printf("Wrong Input!\nInput command again = ");
+            while (getchar() != '\n')
+                ; // 입력 버퍼 비우기
+        }
 
-    // 중간값도 좀 넣어서 가지 치기
-    insert(25, "O");
-    insert(35, "P");
-    insert(45, "Q");
+        switch (command)
+        {
+        case INSERT: // 1
+        {
+            int num;       // 학번 (노드 번호)
+            char name[10]; // 이름
 
-    // 트리 구조 출력
-    printf("\n--- print_tree() ---\n");
-    print_tree();
+            printf("Input number and name :");
+            while (scanf("%d %s", &num, name) != 2) // 입력값이 정상이 아닐 경우
+            {
+                printf("Wrong Input!\nInput command again = ");
+                while (getchar() != '\n')
+                    ; // 입력 버퍼 비우기
+            }
 
-    // 깊이 우선 탐색
-    dfs();
+            if (insert(num, name) == FAIL)
+            {
+                printf("insert() is failed\n");
+            }
+            else
+            {
+                printf("insert() is complete\n");
+            }
 
-    // 너비 우선 탐색
-    bfs();
+            break;
+        }
+        case DELETE: // 2
+        {
+            int num; // 삭제할 노드 번호
 
-    return 0;
+            printf("Input number :");
+            while (scanf("%d", &num) != 1) // 입력값이 정상이 아닐 경우
+            {
+                printf("Wrong Input!\nInput command again = ");
+                while (getchar() != '\n')
+                    ; // 입력 버퍼 비우기
+            }
+
+            if (delete(num) == FAIL)
+            {
+                printf("delete() is failed\n");
+            }
+            else
+            {
+                printf("delete() is complete\n");
+            }
+
+            break;
+        }
+        case RETRIEVE:
+        {
+            int num; // 삭제할 노드 번호
+
+            printf("Input number :");
+            while (scanf("%d", &num) != 1) // 입력값이 정상이 아닐 경우
+            {
+                printf("Wrong Input!\nInput command again = ");
+                while (getchar() != '\n')
+                    ; // 입력 버퍼 비우기
+            }
+
+            if (delete(num) == FAIL)
+            {
+                printf("retreive() is failed\n");
+            }
+            else
+            {
+                printf("retrieve() is complete\n");
+            }
+
+            break;
+        }
+        case UPDATE:
+        {
+            int num;       // 학번 (노드 번호)
+            char name[10]; // 이름
+
+            printf("Input number and name :");
+            while (scanf("%d %s", &num, name) != 2) // 입력값이 정상이 아닐 경우
+            {
+                printf("Wrong Input!\nInput command again = ");
+                while (getchar() != '\n')
+                    ; // 입력 버퍼 비우기
+            }
+
+            if (update(num, name) == FAIL)
+            {
+                printf("update() is failed\n");
+            }
+            else
+            {
+                printf("update() is complete\n");
+            }
+
+            break;
+        }
+        case DFS: // 5
+        {
+            if (dfs() == FAIL)
+            {
+                printf("dfs() is failed\n");
+            }
+            else
+            {
+                printf("dfs() is complete\n");
+            }
+            break;
+        }
+        case BFS: // 6
+        {
+            if (bfs() == FAIL)
+            {
+                printf("bfs() is failed\n");
+            }
+            else
+            {
+                printf("bfs() is complete\n");
+            }
+            break;
+        }
+        case QUIT: // 7
+            break;
+        default:
+            printf("\n       >>>>>   Concentration!!   <<<<<      \n");
+            break;
+        }
+    } while (command != QUIT);
 }

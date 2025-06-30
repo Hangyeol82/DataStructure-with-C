@@ -2,7 +2,8 @@
 File Name: graph.c
 Programmed by: Hangyeol Lee
 Affiliation: Chungbuk University
-Functions: dfs(), bfs(), mst() in graph
+Functions: add_node(), add_edge(), delete_edge(),
+           dfs(), bfs(), mst() in graph
 Copyright (c) 2025 Hangyeol Lee. All rights reserved.
 ---------------------------------------------------------------------*/
 #include <stdio.h>
