@@ -6,6 +6,11 @@ Functions: add_node(), add_edge(), delete_edge(),
            dfs(), bfs(), mst() in graph
 Copyright (c) 2025 Hangyeol Lee. All rights reserved.
 ---------------------------------------------------------------------*/
+
+/*
+!!mst에서 그래프가 연결된 그래프가 아니면 안됨!!
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -265,7 +270,7 @@ int add_edge(int s, int e, int w)
     new_edge->dest_node = end;
 
     AdjNode *cur;
-    AdjNode *pre;
+    AdjNode *pre = NULL;
     /* 인접리스트로 구현된 간선들의 정보는 내림차순으로 정렬한다 왜냐하면,
        dfs할 때 내림차순으로 push해야지 가장 작은 노드를 먼저 확인한다   */
     if (start->adjList == NULL) // 간선이 하나도 없을 때 (인접 리스트가 비어있음)
@@ -285,6 +290,8 @@ int add_edge(int s, int e, int w)
         {
             if (cur->dest_node->id > e)
             {
+                pre = cur;
+                cur = cur->next;
                 break;
             }
         }
