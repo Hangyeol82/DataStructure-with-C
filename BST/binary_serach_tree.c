@@ -51,11 +51,11 @@ typedef struct FreeNode
 
 typedef struct HeadNode
 {
-    int root_loc;
-    int insert_loc;
-    int free_loc;
-    char padding[Node_size - sizeof(int) * 3]; // 패딩
+    int root_loc;                              // 트리의 루트 노드 위치
+    int insert_loc;                            // free 연결리스트의 첫번째 노드 위치
+    char padding[Node_size - sizeof(int) * 2]; // 패딩
 } HeadNode;
+
 /* 바이너리 파일:
     .bin 확장자로 끝나는 파일, 이진 데이터를 저장하여 그냥 열면 읽을 수 없다
     바이너리 파일엔 int, char, 구조체 노드 등 다양한 정보를 저장할 수 있다.  */
@@ -159,10 +159,9 @@ int dequeue()
 void initialize_tree()
 {
     FILE *tree = fopen(FILENAME, "wb");
-    HeadNode head; // 헤더 노드 값 읽기
-    head.insert_loc = 1;
-    head.free_loc = -1;
-    head.root_loc = 1;
+    HeadNode head;        // 헤더 노드 값 읽기
+    head.insert_loc = -1; // free 연결리스트의 첫번째 위치
+    head.root_loc = 1;    // 트리의 루트 노드 위치
     fwrite(&head, Node_size, 1, tree);
     fclose(tree);
 }
@@ -215,7 +214,10 @@ int insert(int num, char name[])
             {
                 if (now_node.right == -1) // 우측에 노드가 없음. 삽입할 차레
                 {
-                    now_node.right = head.insert_loc;
+                    if (head.insert_loc != -1)
+                        now_node.right = head.insert_loc;
+                    else
+                        now_node.right = size + 1;
                     fseek(tree, loc * Node_size, SEEK_SET);
                     fwrite(&now_node, Node_size, 1, tree); // 덮어쓰기
                     break;
@@ -226,7 +228,10 @@ int insert(int num, char name[])
             {
                 if (now_node.left == -1) // 좌측에 노드가 없음. 삽입할 차레
                 {
-                    now_node.left = head.insert_loc;
+                    if (head.insert_loc != -1)
+                        now_node.left = head.insert_loc;
+                    else
+                        now_node.left = size + 1;
                     fseek(tree, loc * Node_size, SEEK_SET);
                     fwrite(&now_node, Node_size, 1, tree); // 덮어쓰기
                     break;
@@ -243,32 +248,36 @@ int insert(int num, char name[])
         }
     }
 
-    FreeNode tmp; // head.insert_loc값을 바꿔줄 변수 & head.free_loc의 값이 -1인지 확인. 만약 -1이면 삭제된 부분이 다 채워진다는 뜻
-    /*
-     노드를 삽입하는 과정
-     inset_loc위치에 노드를 삽입하고 head.insert_loc의 값을 수정
-    */
-    fseek(tree, Node_size * head.insert_loc, SEEK_SET); // head.insert_loc에 해당하는 위치로 이동
-    fread(&tmp, sizeof(FreeNode), 1, tree);             // tmp에 head.insert_loc가 가르키는 위치의 값 저장
-    if (tmp.next == -1)
+    if (head.insert_loc == -1) // insert_loc이 -1 이면 free 연결리스트가 없음 -> 맨 끝에 노드 삽입
     {
-        head.free_loc = -1; // 삭제된 부분이 다 채워졌으면 head.free_loc를 -1로 바꿈
-    }
-    fseek(tree, Node_size * head.insert_loc, SEEK_SET); // head.insert_loc의 위치로 이동
-    fwrite(&new_node, Node_size, 1, tree);              // 새로운 노드 추가
-
-    if (head.free_loc == -1) // head.free_loc가 -1이면 삭제된 부분(중간 중간 빈 공간) 이 다 채워졌다는 뜻
-    {
-        fseek(tree, 0, SEEK_END);                  // 끝 쪽으로 이동
-        head.insert_loc = ftell(tree) / Node_size; // 끝의 위치로 head.insert_loc 업데이트
+        fseek(tree, 0, SEEK_END);
+        fwrite(&new_node, Node_size, 1, tree);
     }
     else
     {
-        head.insert_loc = tmp.next; // head.insert_loc 업데이트
-    }
+        FreeNode tmp; // head.insert_loc값을 바꿔줄 변수 & head.free_loc의 값이 -1인지 확인. 만약 -1이면 삭제된 부분이 다 채워진다는 뜻
+        /*
+         노드를 삽입하는 과정
+         inset_loc위치에 노드를 삽입하고 head.insert_loc의 값을 수정
+        */
+        fseek(tree, Node_size * head.insert_loc, SEEK_SET); // head.insert_loc에 해당하는 위치로 이동
+        fread(&tmp, sizeof(FreeNode), 1, tree);             // tmp에 head.insert_loc가 가르키는 위치의 값 저장
 
-    fseek(tree, 0, SEEK_SET);
-    fwrite(&head, Node_size, 1, tree);
+        fseek(tree, Node_size * head.insert_loc, SEEK_SET); // head.insert_loc의 위치로 이동
+        fwrite(&new_node, Node_size, 1, tree);              // 새로운 노드 추가
+
+        if (tmp.next == -1)
+        {
+            head.insert_loc = -1; // 삭제된 부분이 다 채워졌으면 head.insert_loc를 -1로 바꿈
+        }
+        else
+        {
+            head.insert_loc = tmp.next; // head.insert_loc 업데이트
+        }
+
+        fseek(tree, 0, SEEK_SET);
+        fwrite(&head, Node_size, 1, tree); // Head 수정한거 저장
+    }
 
     fclose(tree);
     return OK;
@@ -340,9 +349,10 @@ int retrieve(int num)
 }
 
 /*------------------------------------------------------------------------------
- Function: Delete a node in a binary search tree
- Interface: int delete(int num)
- Parameter: int num: a number of a student
+ Function: Update a node in a binary search tree
+ Interface: int update(int num, char name[])
+ Parameter: int num: a number of a student for updating
+            char name[]: name for updating
  return: if a tree or a specific node doesn't exist, return FAIL
          otherwiser, return OK
 ------------------------------------------------------------------------------*/
@@ -441,8 +451,8 @@ int delete(int num)
     int loc = head.root_loc; // 탐색할 노드의 위치
     int parent_loc = -1;     // 삭제할 노드의 부모 노드 위치
 
-    FreeNode free_node;  // Free한 위치를 수정하기 위한 변수
-    free_node.next = -1; // 제일 최근에 삭제한 노드는 Next를 -1로 하여 연결리스트의 마지막임을 알림
+    FreeNode free_node;               // Free한 위치를 수정하기 위한 변수
+    free_node.next = head.insert_loc; // 제일 최근에 삭제한 노드는 Next를 -1로 하여 연결리스트의 마지막임을 알림
 
     while (1) // 삭제할 노드를 찾는 과정
     {
@@ -481,19 +491,11 @@ int delete(int num)
                 }
 
                 /* 삭제 연결 리스트에 노드 추가 */
-                // 삭제한 위치에 -1 저장하면서 삭제 연결리스트의 마지막임을 알림
+                // 삭제한 위치에 free node 저장하면서 삭제 연결리스트의 첫번째 노드로 삽입
                 fseek(tree, loc * Node_size, SEEK_SET);
                 fwrite(&free_node, sizeof(FreeNode), 1, tree);
-                // 원래 삭제 연결리스트의 마지막이었던 head.free_loc에 방금 삭제한 Loc의 위치를 가르키게 함
-                if (head.free_loc != -1)
-                {
-                    free_node.next = loc;
-                    fseek(tree, head.free_loc * Node_size, SEEK_SET);
-                    fwrite(&free_node, sizeof(FreeNode), 1, tree);
-                }
-                if (head.free_loc == -1)
-                    head.insert_loc = loc;
-                head.free_loc = loc;
+
+                head.insert_loc = loc; // 연결리스트의 첫번째 노드를 방금 삭제한 노드의 위치로 변경
 
                 break;
             }
@@ -544,19 +546,11 @@ int delete(int num)
                 }
 
                 /* 삭제 연결 리스트에 노드 추가 */
-                // 삭제한 위치에 -1 저장하면서 삭제 연결리스트의 마지막임을 알림
+                // 삭제한 위치에 free node 저장하면서 삭제 연결리스트의 첫번째 노드로 삽입
                 fseek(tree, loc2 * Node_size, SEEK_SET);
                 fwrite(&free_node, sizeof(FreeNode), 1, tree);
-                // 원래 삭제 연결리스트의 마지막이었던 head.free_loc에 방금 삭제한 Loc의 위치를 가르키게 함
-                if (head.free_loc != -1)
-                {
-                    free_node.next = loc2;
-                    fseek(tree, head.free_loc * Node_size, SEEK_SET);
-                    fwrite(&free_node, sizeof(FreeNode), 1, tree);
-                }
-                if (head.free_loc == -1)
-                    head.insert_loc = loc2; // 위치기 바뀌었기에 Loc2로 초기화
-                head.free_loc = loc2;
+
+                head.insert_loc = loc2; // 연결리스트의 첫번째 노드를 방금 삭제한 노드의 위치로 변경
 
                 break;
             }
@@ -583,19 +577,11 @@ int delete(int num)
                     head.root_loc = child_loc;
 
                 /* 삭제 연결 리스트에 노드 추가 */
-                // 삭제한 위치에 -1 저장하면서 삭제 연결리스트의 마지막임을 알림
+                // 삭제한 위치에 free node 저장하면서 삭제 연결리스트의 첫번째 노드로 삽입
                 fseek(tree, loc * Node_size, SEEK_SET);
                 fwrite(&free_node, sizeof(FreeNode), 1, tree);
-                // 원래 삭제 연결리스트의 마지막이었던 head.free_loc에 방금 삭제한 Loc의 위치를 가르키게 함
-                if (head.free_loc != -1)
-                {
-                    free_node.next = loc;
-                    fseek(tree, head.free_loc * Node_size, SEEK_SET);
-                    fwrite(&free_node, sizeof(FreeNode), 1, tree);
-                }
-                if (head.free_loc == -1)
-                    head.insert_loc = loc;
-                head.free_loc = loc;
+
+                head.insert_loc = loc; // 연결리스트의 첫번째 노드를 방금 삭제한 노드의 위치로 변경
 
                 break;
             }
@@ -794,7 +780,7 @@ void print_tree()
         printf("%d\t%d\t%d\n", node.num, node.left, node.right);
         line++;
     }
-    printf("insert location: %d\nfree location: %d\nroot location: %d\n", head.insert_loc, head.free_loc, head.root_loc);
+    printf("insert location: %d\nroot location: %d\n", head.insert_loc, head.root_loc);
     fclose(tree);
 }
 
