@@ -9,11 +9,12 @@ Copyright (c) 2025 Hangyeol Lee. All rights reserved.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #define OK 1
 #define FAIL 0
 #define FILENAME "bst.bin"
-#define EMPTY 0
+#define EMPTY 1
 
 #define MAX_STACK_SIZE 100
 #define STACKOVERFLOW -1
@@ -33,7 +34,7 @@ Copyright (c) 2025 Hangyeol Lee. All rights reserved.
 
 // 헤드 노드를 둬서 파일에 저장하기
 
-typedef struct Node
+typedef struct node
 {
     int num;       // 학번
     char name[10]; // 이름
@@ -43,13 +44,13 @@ typedef struct Node
 
 const int Node_size = sizeof(Node); // 구조체 Node의 크기
 
-typedef struct FreeNode
+typedef struct freeNode
 {
     int next;                              // 다음 Free node 위치
     char padding[Node_size - sizeof(int)]; // Node크기 맞추기 위한 Padding
 } FreeNode;
 
-typedef struct HeadNode
+typedef struct headNode
 {
     int root_loc;                              // 트리의 루트 노드 위치
     int free_loc;                              // free 연결리스트의 첫번째 노드 위치
@@ -186,8 +187,8 @@ int insert(int num, char name[])
     HeadNode head; // 헤더 노드 값 읽기
     fread(&head, Node_size, 1, tree);
 
-    fseek(tree, 0, SEEK_END);               // 파일 끝으로 이동
-    int size = ftell(tree) / Node_size - 1; // 파일 크기 ( EMPTY 이면 파일이 비어있다)
+    fseek(tree, 0, SEEK_END);           // 파일 끝으로 이동
+    int size = ftell(tree) / Node_size; // 파일 크기 ( EMPTY 이면 파일이 비어있다)
 
     Node new_node; // 삽입할 노드
     new_node.num = num;
@@ -217,7 +218,7 @@ int insert(int num, char name[])
                     if (head.free_loc != -1)
                         now_node.right = head.free_loc;
                     else
-                        now_node.right = size + 1;
+                        now_node.right = size;
                     fseek(tree, loc * Node_size, SEEK_SET);
                     fwrite(&now_node, Node_size, 1, tree); // 덮어쓰기
                     break;
@@ -231,7 +232,7 @@ int insert(int num, char name[])
                     if (head.free_loc != -1)
                         now_node.left = head.free_loc;
                     else
-                        now_node.left = size + 1;
+                        now_node.left = size;
                     fseek(tree, loc * Node_size, SEEK_SET);
                     fwrite(&now_node, Node_size, 1, tree); // 덮어쓰기
                     break;
@@ -302,8 +303,8 @@ int retrieve(int num)
     HeadNode head; // 헤더 노드 값 읽기
     fread(&head, Node_size, 1, tree);
 
-    fseek(tree, 0, SEEK_END);               // 파일 끝으로 이동
-    int size = ftell(tree) / Node_size - 1; // 파일 크기 ( EMPTY 이면 파일이 비어있다)
+    fseek(tree, 0, SEEK_END);           // 파일 끝으로 이동
+    int size = ftell(tree) / Node_size; // 파일 크기 ( EMPTY 이면 파일이 비어있다)
 
     Node cur; // edge를 추가할 노드
 
@@ -368,8 +369,8 @@ int update(int num, char name[])
     HeadNode head; // 헤더 노드 값 읽기
     fread(&head, Node_size, 1, tree);
 
-    fseek(tree, 0, SEEK_END);               // 파일 끝으로 이동
-    int size = ftell(tree) / Node_size - 1; // 파일 크기 ( EMPTY 이면 파일이 비어있다)
+    fseek(tree, 0, SEEK_END);           // 파일 끝으로 이동
+    int size = ftell(tree) / Node_size; // 파일 크기 ( EMPTY 이면 파일이 비어있다)
 
     Node cur; // edge를 추가할 노드
 
@@ -437,8 +438,8 @@ int delete(int num)
     HeadNode head; // 헤더 노드 값 읽기
     fread(&head, Node_size, 1, tree);
 
-    fseek(tree, 0, SEEK_END);               // 파일 끝으로 이동
-    int size = ftell(tree) / Node_size - 1; // 파일 크기 (START이면 파일이 비어있다)
+    fseek(tree, 0, SEEK_END);           // 파일 끝으로 이동
+    int size = ftell(tree) / Node_size; // 파일 크기 (EMPTY이면 파일이 비어있다)
 
     if (size == EMPTY) // 파일이 비어있을 경우
     {
@@ -454,6 +455,8 @@ int delete(int num)
     FreeNode free_node;             // Free한 위치를 수정하기 위한 변수
     free_node.next = head.free_loc; // 제일 최근에 삭제한 노드는 Next를 -1로 하여 연결리스트의 마지막임을 알림
 
+    int is_end = 0; // 삭제하는 노드가 파일의 마지막인지 확인하는 변수
+
     while (1) // 삭제할 노드를 찾는 과정
     {
         if (loc == -1) // 노드가 존재하지 않음
@@ -468,6 +471,10 @@ int delete(int num)
 
         if (now_node.num == num) // 삭제할 노드를 찾은 경우
         {
+            if (loc + 1 >= size) // 삭제한 노드가 파일의 맨 마지막인 경우
+            {
+                is_end = 1;
+            }
             if (now_node.left == -1 && now_node.right == -1) // 자식이 없는 경우
             {
                 if (parent_loc != -1) // 부모 노드가 존재할 경우 부모노드 수정
@@ -490,13 +497,20 @@ int delete(int num)
                     break;
                 }
 
-                /* 삭제 연결 리스트에 노드 추가 */
-                // 삭제한 위치에 free node 저장하면서 삭제 연결리스트의 첫번째 노드로 삽입
-                fseek(tree, loc * Node_size, SEEK_SET);
-                fwrite(&free_node, sizeof(FreeNode), 1, tree);
+                if (is_end) // 파일의 맨 마지막 노드를 삭제하는 경우
+                {
+                    int fd = fileno(tree);
+                    ftruncate(fd, (size - 1) * Node_size); // 노드를 파일에서 삭제하기
+                }
+                else
+                {
+                    /* 삭제 연결 리스트에 노드 추가 */
+                    // 삭제한 위치에 free node 저장하면서 삭제 연결리스트의 첫번째 노드로 삽입
+                    fseek(tree, loc * Node_size, SEEK_SET);
+                    fwrite(&free_node, sizeof(FreeNode), 1, tree);
 
-                head.free_loc = loc; // 연결리스트의 첫번째 노드를 방금 삭제한 노드의 위치로 변경
-
+                    head.free_loc = loc; // 연결리스트의 첫번째 노드를 방금 삭제한 노드의 위치로 변경
+                }
                 break;
             }
             else if (now_node.left != -1 && now_node.right != -1) // 자식이 둘 다 있는 경우
@@ -545,13 +559,20 @@ int delete(int num)
                     fwrite(&now_node, Node_size, 1, tree);
                 }
 
-                /* 삭제 연결 리스트에 노드 추가 */
-                // 삭제한 위치에 free node 저장하면서 삭제 연결리스트의 첫번째 노드로 삽입
-                fseek(tree, loc2 * Node_size, SEEK_SET);
-                fwrite(&free_node, sizeof(FreeNode), 1, tree);
+                if (is_end) // 파일의 맨 마지막 노드를 삭제하는 경우
+                {
+                    int fd = fileno(tree);
+                    ftruncate(fd, (size - 1) * Node_size); // 노드를 파일에서 삭제하기
+                }
+                else
+                {
+                    /* 삭제 연결 리스트에 노드 추가 */
+                    // 삭제한 위치에 free node 저장하면서 삭제 연결리스트의 첫번째 노드로 삽입
+                    fseek(tree, loc2 * Node_size, SEEK_SET);
+                    fwrite(&free_node, sizeof(FreeNode), 1, tree);
 
-                head.free_loc = loc2; // 연결리스트의 첫번째 노드를 방금 삭제한 노드의 위치로 변경
-
+                    head.free_loc = loc2; // 연결리스트의 첫번째 노드를 방금 삭제한 노드의 위치로 변경
+                }
                 break;
             }
             else // 자식이 하나만 있는 경우
@@ -576,13 +597,20 @@ int delete(int num)
                 else // 루트 노드를 삭제하면 head.root_loc를 수정해야 함
                     head.root_loc = child_loc;
 
-                /* 삭제 연결 리스트에 노드 추가 */
-                // 삭제한 위치에 free node 저장하면서 삭제 연결리스트의 첫번째 노드로 삽입
-                fseek(tree, loc * Node_size, SEEK_SET);
-                fwrite(&free_node, sizeof(FreeNode), 1, tree);
+                if (is_end) // 파일의 맨 마지막 노드를 삭제하는 경우
+                {
+                    int fd = fileno(tree);
+                    ftruncate(fd, (size - 1) * Node_size); // 노드를 파일에서 삭제하기
+                }
+                else
+                {
+                    /* 삭제 연결 리스트에 노드 추가 */
+                    // 삭제한 위치에 free node 저장하면서 삭제 연결리스트의 첫번째 노드로 삽입
+                    fseek(tree, loc * Node_size, SEEK_SET);
+                    fwrite(&free_node, sizeof(FreeNode), 1, tree);
 
-                head.free_loc = loc; // 연결리스트의 첫번째 노드를 방금 삭제한 노드의 위치로 변경
-
+                    head.free_loc = loc; // 연결리스트의 첫번째 노드를 방금 삭제한 노드의 위치로 변경
+                }
                 break;
             }
         }
@@ -624,8 +652,8 @@ int dfs()
     HeadNode head; // 헤더 노드 값 읽기
     fread(&head, Node_size, 1, tree);
 
-    fseek(tree, 0, SEEK_END);               // 파일 끝으로 이동
-    int size = ftell(tree) / Node_size - 1; // 파일 크기
+    fseek(tree, 0, SEEK_END);           // 파일 끝으로 이동
+    int size = ftell(tree) / Node_size; // 파일 크기
 
     if (size == EMPTY) // 파일 크기 ( EMPTY 이면 파일이 비어있다)
     {
@@ -702,8 +730,8 @@ int bfs()
     HeadNode head; // 헤더 노드 값 읽기
     fread(&head, Node_size, 1, tree);
 
-    fseek(tree, 0, SEEK_END);               // 파일 끝으로 이동
-    int size = ftell(tree) / Node_size - 1; // 파일 크기
+    fseek(tree, 0, SEEK_END);           // 파일 끝으로 이동
+    int size = ftell(tree) / Node_size; // 파일 크기
 
     if (size == EMPTY) // 파일 크기 ( EMPTY 이면 파일이 비어있다)
     {

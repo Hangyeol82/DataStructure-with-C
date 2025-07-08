@@ -37,8 +37,8 @@ typedef struct Node
     int is_leaf;         // 리프 노드 유무
     int cnt;             // 자식 개수
     int parent;          // 부모 노드 위치
-    int keys[ORDER - 1]; // 자식의 Key, 위치
-    int children[ORDER]; // 자식 노드 위치
+    int keys[ORDER]; // 자식의 Key, 위치
+    int children[ORDER+1]; // 자식 노드 위치
     int next;            // 형제 위치
 } Node;
 
@@ -308,13 +308,13 @@ int insert(int num, char name[])
             second.is_leaf = 1;
             second.cnt = ORDER - cur.cnt;
 
-            int fi, si = 0; // cur, second의 key & children index 변수
+            int ci, si = 0; // cur, second의 key & children index 변수
             for (int i = 0; i < ORDER; i++)
             {
                 if (i < cur.cnt)
                 {
-                    cur.keys[fi] = tmp_node.keys[i];
-                    cur.children[fi++] = tmp_node.children[i];
+                    cur.keys[ci] = tmp_node.keys[i];
+                    cur.children[ci++] = tmp_node.children[i];
                 }
                 else
                 {
@@ -323,16 +323,42 @@ int insert(int num, char name[])
                 }
             }
 
-            if(tmp_node.parent != -1) // 원래 리프노드의 부모가 있었으면
+            if (tmp_node.parent != -1) // 원래 리프노드의 부모가 있었으면
             {
                 second.parent = tmp_node.parent;
             }
             else // 부모가 없으면 새로운 Non-leaf노드 생성
             {
-
             }
         }
     }
+}
+
+int split_nonleaf(FILE *tree, int parent_loc, int child_loc, int key)
+{
+    Node parent;
+
+    fseek(tree, Node_size * parent_loc, SEEK_SET);
+    fwrite(&parent, Node_size, 1, tree);
+
+    int index; // key가 들어가야하는 위치
+
+    for (int i = 0; i < parent.cnt; i++) // index 찾기
+    {
+        index = i;
+        if(parent.keys[i] > key)
+        {
+            break;
+        }
+    }
+
+    for (int i = parent.cnt; i > index ; i--) // 밀어내기
+    {
+        parent.keys[i] = parent.keys[i-1];
+        parent.children[i] = parent.children[i-1];
+    }
+    parent.keys[index] = key
+    parent.children[index] = child_loc;
 }
 
 /*------------------------------------------------------------------------------
