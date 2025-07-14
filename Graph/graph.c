@@ -7,10 +7,6 @@ Functions: add_node(), add_edge(), delete_edge(),
 Copyright (c) 2025 Hangyeol Lee. All rights reserved.
 ---------------------------------------------------------------------*/
 
-/*
-!!mst에서 그래프가 연결된 그래프가 아니면 안됨!!
-*/
-
 #include <stdio.h>
 #include <stdlib.h>
 
