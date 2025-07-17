@@ -1,0 +1,96 @@
+// TC1_Leaf_Borrow_Right
+insert(10, "A");
+insert(20, "B");
+insert(30, "C");
+insert(40, "D");
+insert(50, "E");
+delete(20);
+
+// TC2_Leaf_Borrow_Left
+insert(10, "A");
+insert(20, "B");
+insert(30, "C");
+insert(40, "D");
+insert(50, "E");
+delete(40);
+
+// TC3_Leaf_Merge_Right
+insert(10, "A");
+insert(20, "B");
+insert(30, "C");
+insert(40, "D");
+insert(50, "E");
+delete(20);
+delete(30);
+
+// TC4_Leaf_Merge_Left
+insert(10, "A");
+insert(20, "B");
+insert(30, "C");
+insert(40, "D");
+insert(50, "E");
+delete(40);
+delete(50);
+
+// TC5_Internal_Borrow_Right
+insert(10, "A");
+insert(20, "B");
+insert(30, "C");
+insert(40, "D");
+insert(50, "E");
+insert(60, "F");
+insert(70, "G");
+delete(10);
+delete(20);
+delete(30);
+
+// TC6_Internal_Borrow_Left
+insert(10, "A");
+insert(20, "B");
+insert(30, "C");
+insert(40, "D");
+insert(50, "E");
+insert(60, "F");
+insert(70, "G");
+delete(60);
+delete(70);
+
+// TC7_Internal_Merge_Right
+insert(10, "A");
+insert(20, "B");
+insert(30, "C");
+insert(40, "D");
+insert(50, "E");
+insert(60, "F");
+insert(70, "G");
+delete(10);
+delete(20);
+delete(30);
+delete(40);
+
+// TC8_Internal_Merge_Left
+insert(10, "A");
+insert(20, "B");
+insert(30, "C");
+insert(40, "D");
+insert(50, "E");
+insert(60, "F");
+insert(70, "G");
+delete(50);
+delete(60);
+delete(70);
+delete(40);
+
+// TC9_Root_Becomes_Child
+insert(10, "A");
+insert(20, "B");
+insert(30, "C");
+insert(40, "D");
+insert(50, "E");
+insert(60, "F");
+delete(10);
+delete(20);
+delete(30);
+delete(40);
+delete(50);
+delete(60);
