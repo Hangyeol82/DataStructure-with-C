@@ -17,14 +17,6 @@ Copyright (c) 2025 Hangyeol Lee. All rights reserved.
 #define FILENAME "bst.bin"
 #define EMPTY 1
 
-#define MAX_STACK_SIZE 100
-#define STACKOVERFLOW -1
-#define STACKUNDERFLOW -2
-
-#define MAX_QUEUE_SIZE 100
-#define QUEUE_OVERFLOW -1
-#define QUEUE_UNDERFLOW -2
-
 #define INSERT 1
 #define DELETE 2
 #define RETRIEVE 3
@@ -120,7 +112,7 @@ int insert(int num, char name[])
     new_node.right = -1;
     new_node.left = -1;
 
-    Node now_node; // edge를 추가할 노드
+    Node now_node; // 탐색용 노드
 
     /*
      다음부터 삽입한 노드의 부모 노드의 left or right를 수정.
@@ -180,16 +172,16 @@ int insert(int num, char name[])
     }
     else
     {
-        FreeNode tmp; // head.free_loc값을 바꿔줄 변수 & head.free_loc의 값이 -1인지 확인. 만약 -1이면 삭제된 부분이 다 채워진다는 뜻
+        FreeNode tmp; // free 연결리스트의 첫번째 노드를 저장할 변수
         /*
          노드를 삽입하는 과정
          inset_loc위치에 노드를 삽입하고 head.free_loc의 값을 수정
         */
         fseek(tree, Node_size * head.free_loc, SEEK_SET); // head.free_loc에 해당하는 위치로 이동
-        fread(&tmp, sizeof(FreeNode), 1, tree);           // tmp에 head.free_loc가 가르키는 위치의 값 저장
+        fread(&tmp, sizeof(FreeNode), 1, tree);           // tmp에 free연결리스트 첫번째 값 저장
 
         fseek(tree, Node_size * head.free_loc, SEEK_SET); // head.free_loc의 위치로 이동
-        fwrite(&new_node, Node_size, 1, tree);            // 새로운 노드 추가
+        fwrite(&new_node, Node_size, 1, tree);            // 노드 삽입
 
         if (tmp.next == -1)
         {
@@ -197,7 +189,7 @@ int insert(int num, char name[])
         }
         else
         {
-            head.free_loc = tmp.next; // head.free_loc 업데이트
+            head.free_loc = tmp.next; // head.free_loc를 연결리스트의 두번째로 변경
         }
 
         fseek(tree, 0, SEEK_SET);
