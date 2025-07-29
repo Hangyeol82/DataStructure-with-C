@@ -9,6 +9,7 @@ Copyright (c) 2025 Hangyeol Lee. All rights reserved.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #define OK 1
 #define FAIL 0
@@ -34,14 +35,16 @@ Copyright (c) 2025 Hangyeol Lee. All rights reserved.
 #define BFS 6
 #define QUIT 7
 
+// bulk loading , Fopen -> open 바꾸기
+
 typedef struct Node
 {
-    int is_leaf;             // 리프 노드 유무
-    int cnt;                 // 자식 개수
-    int parent;              // 부모 노드 위치
-    int keys[ORDER];         // 자식의 Key, 위치
-    int children[ORDER + 1]; // 자식 노드 위치
-    int next;                // 형제 위치
+    bool tag;         // 리프 노드 유무
+    short cnt;        // 자식 개수
+    int parent;       // 부모 노드 위치
+    int keys[62];     // 자식의 Key, 위치
+    int children[63]; // 자식 노드 위치
+    int next;         // 형제 위치
 } Node;
 
 const int Node_size = sizeof(Node); // 구조체 Node의 크기
@@ -231,7 +234,7 @@ int insert_data(char name[])
     {
         FreeData tmp;                           // FreeNode의 정보 저장용 변수
         fseek(data, head.insert_loc, SEEK_SET); // 연결리스트 첫번째 노드 접근
-        fwrite(&tmp, Data_size, 1, data);       // 첫번째 노드 tmp에 저장
+        fread(&tmp, Data_size, 1, data);        // 첫번째 노드 tmp에 저장
 
         fseek(data, head.insert_loc, SEEK_END); // 다시 첫번째 노드 접근
         result = head.insert_loc;               // 삽입하는 데이터 위치 저장
@@ -305,7 +308,7 @@ int insert_into_parent(FILE *tree, int parent_loc, int left_child_loc, int right
     if (parent_loc == -1) // 루트 노드에서 Key값을 올리는 경우
     {
         /* 새로운 루트노드 생성후 삽입 */
-        parent.is_leaf = 0;
+        parent.tag = 0;
         parent.parent = -1;
         parent.cnt = 1;
         parent.children[0] = left_child_loc;
@@ -354,7 +357,7 @@ int insert_into_parent(FILE *tree, int parent_loc, int left_child_loc, int right
             parent.cnt = (ORDER - 1) / 2; // cnt 개수 변경
 
             Node right;
-            right.is_leaf = 0;
+            right.tag = 0;
             right.parent = parent.parent;
             right.cnt = ORDER / 2; // 새로운 노드 right 초기화
 
@@ -368,7 +371,7 @@ int insert_into_parent(FILE *tree, int parent_loc, int left_child_loc, int right
 
             int right_loc = insert_node(tree, right); // 삽입하고 삽입한 위치 반환
             Node child;
-            for (int i = 0; i < right.cnt; i++)
+            for (int i = 0; i <= right.cnt; i++)
             {
                 fseek(tree, right.children[i] * Node_size, SEEK_SET);
                 fread(&child, Node_size, 1, tree);
@@ -377,7 +380,7 @@ int insert_into_parent(FILE *tree, int parent_loc, int left_child_loc, int right
                 fwrite(&child, Node_size, 1, tree);
             }
             int new_parent_loc = insert_into_parent(tree, parent.parent, parent_loc, right_loc, parent.keys[parent.cnt]); // 재귀적으로 해결
-            result = right_loc;                                                                                           // 부모가 나눠지면서 새로운 부모가 생김
+            result = right_loc;
 
             if (right.parent != new_parent_loc) // 부모가 새로 생긴 경우 (기존의 부모랑 다름)
             {
@@ -420,7 +423,7 @@ int insert(int num, char name[])
     if (size == EMPTY) // 트리가 존재하지 않을 때
     {
         // 새로운 노드와 데이터 삽입
-        new_node.is_leaf = 1;
+        new_node.tag = 1;
         new_node.parent = -1;
         new_node.cnt = 1;
         new_node.keys[0] = num;
@@ -438,7 +441,7 @@ int insert(int num, char name[])
         fseek(tree, Node_size * loc, SEEK_SET); // 루트 노드의 위치로 이동
         fread(&cur, Node_size, 1, tree);        // 루트 노드 읽기
 
-        while (cur.is_leaf != 1) // 리프 노드를 찾는 과정
+        while (cur.tag != 1) // 리프 노드를 찾는 과정
         {
             for (int i = 0; i <= cur.cnt; i++) // keys(분기)
             {
@@ -480,7 +483,7 @@ int insert(int num, char name[])
             cur.cnt = ORDER / 2;
 
             Node right; // 노드를 두개로 분기
-            right.is_leaf = 1;
+            right.tag = 1;
             right.cnt = ORDER - cur.cnt;
             right.parent = cur.parent;
 
@@ -498,7 +501,6 @@ int insert(int num, char name[])
             if (cur.parent != new_parent_loc) // 부모가 새로 생긴 경우
             {
                 cur.parent = right.parent = new_parent_loc;
-
                 fseek(tree, Node_size * right_loc, SEEK_SET);
                 fwrite(&right, Node_size, 1, tree); // right 노드 업데이트 (부모)
             }
@@ -542,7 +544,7 @@ int delete_from_parent(FILE *tree, int loc, int index)
     }
     fseek(tree, loc * Node_size, SEEK_SET);
     fwrite(&cur, Node_size, 1, tree);
-    if (cur.parent == -1 && cur.cnt <= 0) // 루트 노드는 Underflow가 없고 cnt가 0인지만 확인하면 된다
+    if (cur.parent == -1 && cur.cnt <= 0) // 루트노드의 cnt가 0이면 기존의 루트노드를 삭제하고 자식 노드를 루트노드로 변경
     {
         /* 루트노드의 cnt가 0이면 기존의 루트노드를 삭제하고 자식 노드를 루트노드로 변경 */
         HeadNode head;
@@ -552,8 +554,9 @@ int delete_from_parent(FILE *tree, int loc, int index)
         head.root_loc = cur.children[index]; // 루트 노드를 자식노드로 변경
         fseek(tree, 0, SEEK_SET);
         fwrite(&head, Node_size, 1, tree); // 헤드노드 수정 및 저장
+        delete_node(tree, loc);            // 기존 루트노드 삭제
 
-        delete_node(tree, loc); // 기존 루트 노드 삭제
+        return -1;
     }
     else if (cur.cnt < UNDERFLOW) // underflow!
     {
@@ -584,14 +587,24 @@ int delete_from_parent(FILE *tree, int loc, int index)
             fread(&right, Node_size, 1, tree);
             if (right.cnt - 1 >= UNDERFLOW) // 하나 빼와도 underflow가 생기지 않음
             {
-                cur.keys[cur.cnt] = parent.keys[cur_index]; // 부모의 Key를 cur로 가져오고
-                parent.keys[cur_index] = right.keys[0];     // right의 key를 부모로 가져오기
+                cur.keys[cur.cnt] = parent.keys[cur_index];  // 부모의 Key를 cur로 가져오고
+                parent.keys[cur_index] = right.keys[0];      // right의 key를 부모로 가져오기
+                cur.children[++cur.cnt] = right.children[0]; // right의 children도 가져오기
+
+                Node child; // 방금 가져온 Children읽어와서 부모 위치 변경해줘야함
+                fseek(tree, right.children[0] * Node_size, SEEK_SET);
+                fread(&child, Node_size, 1, tree);
+                child.parent = loc;
+                fseek(tree, right.children[0] * Node_size, SEEK_SET);
+                fwrite(&child, Node_size, 1, tree);
 
                 for (int i = 0; i < right.cnt - 1; i++) // right 밀어내기
                 {
                     right.keys[i] = right.keys[i + 1];
-                    right.children[i + 1] = right.children[i + 2];
+                    right.children[i] = right.children[i + 1];
                 }
+                right.children[right.cnt - 1] = right.children[right.cnt];
+                right.cnt--;
 
                 fseek(tree, loc * Node_size, SEEK_SET);
                 fwrite(&cur, Node_size, 1, tree);
@@ -614,10 +627,18 @@ int delete_from_parent(FILE *tree, int loc, int index)
                 for (int i = cur.cnt; i > 1; i--) // cur 밀어내기
                 {
                     cur.keys[i] = cur.keys[i - 1];
-                    cur.children[i + 1] = cur.keys[i];
+                    cur.children[i + 1] = cur.children[i];
                 }
                 cur.keys[0] = parent.keys[cur_index - 1];             // 부모의 key를 Cur의 첫번째 Key가져오기
                 parent.keys[cur_index - 1] = left.keys[left.cnt - 1]; // 방금 가져온 부모의 Key쪽에 left의 Key채워넣기
+                cur.children[0] = left.children[left.cnt--];          // child도 옮기기
+
+                Node child; // 방금 옮긴 Child의 부모를 수정해야함
+                fseek(tree, cur.children[0] * Node_size, SEEK_SET);
+                fread(&child, Node_size, 1, tree);
+                child.parent = loc;
+                fseek(tree, cur.children[0] * Node_size, SEEK_SET);
+                fwrite(&child, Node_size, 1, tree);
 
                 fseek(tree, loc * Node_size, SEEK_SET);
                 fwrite(&cur, Node_size, 1, tree);
@@ -631,12 +652,12 @@ int delete_from_parent(FILE *tree, int loc, int index)
                 Node child;
 
                 left.keys[left.cnt] = parent.keys[cur_index - 1]; // 부모의 분기점을 맨 끝에
-                left.children[left.cnt + 1] = cur.children[0];    // cur의 0번 인덱스 children 추가
+                left.children[left.cnt] = cur.children[0];        // cur의 0번 인덱스 children 추가
 
                 fseek(tree, cur.children[0] * Node_size, SEEK_SET);
                 fread(&child, Node_size, 1, tree);             // 자식 읽기
                 child.parent = parent.children[cur_index - 1]; // 자식의 부모 바꿔주기
-                if (child.is_leaf == 1 && left.keys[left.cnt] != child.keys[0])
+                if (child.tag == 1 && left.keys[left.cnt] != child.keys[0])
                 {
                     left.keys[left.cnt] = child.keys[0];
                 }
@@ -678,7 +699,7 @@ int delete_from_parent(FILE *tree, int loc, int index)
             fseek(tree, right.children[0] * Node_size, SEEK_SET);
             fread(&child, Node_size, 1, tree);
             child.parent = loc;
-            if (child.is_leaf == 1 && cur.keys[cur.cnt] != child.keys[0])
+            if (child.tag == 1 && cur.keys[cur.cnt] != child.keys[0])
             {
                 cur.keys[cur.cnt] = child.keys[0];
             }
@@ -733,7 +754,7 @@ int delete(int num)
     int index;               // 부모노드의 리프노드 index
     int loc = head.root_loc; // 루트노드에서 시작해서 리프노드의 위치를 나타냄
 
-    while (cur.is_leaf != 1) // 리프노드를 찾는 과정
+    while (cur.tag != 1) // 리프노드를 찾는 과정
     {
         for (int i = 0; i <= cur.cnt; i++)
         {
@@ -935,7 +956,11 @@ void print_tree()
 {
     FILE *tree = fopen(TREEFILENAME, "r+b");
     FILE *data = fopen(DATAFILENAME, "r+b");
-
+    if (tree == NULL || data == NULL)
+    {
+        printf("Error in print_tree()\n");
+        exit(1);
+    }
     HeadNode head;
     fread(&head, Node_size, 1, tree);
 
@@ -951,7 +976,7 @@ void print_tree()
         printf("==========================\n");
         printf("count: %d\n", node.cnt);
         printf("parent: %d\n", node.parent);
-        if (node.is_leaf) // 리프노드인 경우
+        if (node.tag) // 리프노드인 경우
         {
             printf("leaf node!\n");
             for (int i = 0; i < node.cnt; i++)
@@ -982,19 +1007,22 @@ void print_tree()
 
 int main()
 {
-    initialize_tree(); // 트리 초기화
+    initialize_tree();
 
+    // 1) 두 레벨 트리 구성 (ORDER=4 기준)
     insert(10, "A");
     insert(20, "B");
     insert(30, "C");
     insert(40, "D");
     insert(50, "E");
-    insert(60, "F");
-    // delete(10);
-    // delete(20);
-    // delete(30);
-    // delete(40);
-    // delete(50);
-    // delete(60);
+    insert(35, "F");
+    // → Leaf split twice, Internal split → root.keys=[20,40], children 3개
+
+    // 2) 오른쪽 Internal 자식 underflow → LEFT sibling에서 키 빌려오기
+    delete(50);
+    delete(40);
+    // 오른쪽 internal child underflow → 왼쪽 sibling에서 “30” 빌려옴
+
     print_tree();
+    return 0;
 }
