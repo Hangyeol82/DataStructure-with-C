@@ -1100,7 +1100,7 @@ int dfs()
             printf("\n");
             for (int i = cur.cnt; i >= 0; i--)
             {
-                if (push(loc) == STACKOVERFLOW)
+                if (push(cur.value[i]) == STACKOVERFLOW)
                 {
                     printf("StackOverflow in dfs()\n");
                     return FAIL;
@@ -1166,14 +1166,14 @@ int bfs()
             {
                 printf("%d ", cur.keys[i]);
 
-                if (enqueue(loc) == QUEUE_OVERFLOW)
+                if (enqueue(cur.value[i]) == QUEUE_OVERFLOW)
                 {
                     printf("QueueOverflow in bfs()\n");
                     return FAIL;
                 }
             }
 
-            if (enqueue(loc) == QUEUE_OVERFLOW)
+            if (enqueue(cur.value[cur.cnt]) == QUEUE_OVERFLOW)
             {
                 printf("QueueOverflow in bfs()\n");
                 return FAIL;
@@ -1249,6 +1249,7 @@ void print_tree()
 int main()
 {
     initialize_tree(); // 트리 초기화
+
 
     int command;
     do
