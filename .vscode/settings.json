@@ -3,6 +3,8 @@
     "**/target": true
   },
   "files.associations": {
-    "typeinfo": "c"
+    "typeinfo": "c",
+    "__locale": "c",
+    "bitset": "c"
   }
 }

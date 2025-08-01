@@ -6,6 +6,12 @@
 #define OK 1
 #define FAIL 0
 
+#define INSERT 1
+#define DELETE 2
+#define UPDATE 3
+#define RETRIEVE 4
+#define QUIT 5
+
 typedef struct Entry
 {
     int id;
@@ -178,5 +184,132 @@ int update(int id, char name[])
 
 int main()
 {
-    
+    int command;
+    int ret; // scanf에 잘못 입력됨을 확인하는 변수
+
+    do
+    {
+        printf("----------------------------------------------------------------\n");
+        printf("                     singly linked list                         \n");
+        printf("----------------------------------------------------------------\n");
+        printf(" Insert         = 1           Delete         = 2 \n");
+        printf(" Update         = 3           Retrieve       = 4 \n");
+        printf(" Quit           = 5 \n");
+        printf("----------------------------------------------------------------\n");
+
+        printf("Command = ");
+        while (scanf("%d", &command) != 1) // 입력값이 정수가 아닐 경우
+        {
+            printf("Wrong Input!\nInput command again = ");
+            while (getchar() != '\n')
+                ; // 입력 버퍼 비우기
+        }
+
+        switch (command)
+        {
+        case INSERT: // 1
+        {
+            int id;
+            char name[10];
+
+            printf("Input id: ");
+            while (scanf("%d", &id) != 1) // 입력값이 정수가 아닐 경우
+            {
+                printf("Wrong Input!\nInput id again = ");
+                while (getchar() != '\n')
+                    ; // 입력 버퍼 비우기
+            }
+
+            printf("Input Name: ");
+            while (scanf("%s", name) != 1) // 입력값이 문자열이 아닐 경우
+            {
+                printf("Wrong Input!\nInput name again = ");
+                while (getchar() != '\n')
+                    ; // 입력 버퍼 비우기
+            }
+
+            if (insert(id, name) == OK)
+            {
+                printf("Inserting is done!\n");
+            }
+            else
+            {
+                printf("Inserting is failed\n");
+            }
+            break;
+        }
+        case DELETE: // 2
+        {
+            int id;
+
+            printf("Input Id: ");
+            while (scanf("%d", &id) != 1) // 입력값이 정수가 아닐 경우
+            {
+                printf("Wrong Input!\nInput id again = ");
+                while (getchar() != '\n')
+                    ; // 입력 버퍼 비우기
+            }
+            if (delete(id) == OK)
+                printf("delete() was complete\n");
+            else
+                printf("delete() was failed\n");
+
+            break;
+        }
+        case UPDATE: // 3
+        {
+            int id;
+            char name[10];
+
+            printf("Input id: ");
+            while (scanf("%d", &id) != 1) // 입력값이 정수가 아닐 경우
+            {
+                printf("Wrong Input!\nInput id again = ");
+                while (getchar() != '\n')
+                    ; // 입력 버퍼 비우기
+            }
+
+            printf("Input Name: ");
+            while (scanf("%s", name) != 1) // 입력값이 문자열이 아닐 경우
+            {
+                printf("Wrong Input!\nInput name again = ");
+                while (getchar() != '\n')
+                    ; // 입력 버퍼 비우기
+            }
+
+            update(id, name);
+
+            break;
+        }
+        case RETRIEVE: // 4
+        {
+            int id;
+
+            printf("Input Id: ");
+            while (scanf("%d", &id) != 1) // 입력값이 정수가 아닐 경우
+            {
+                printf("Wrong Input!\nInput id again = ");
+                while (getchar() != '\n')
+                    ; // 입력 버퍼 비우기
+            }
+
+            if (retrieve(id) == FAIL)
+            {
+                printf("Retreive() was failed\n");
+            }
+            else
+            {
+                printf("Retreive() was complete\n");
+            }
+
+            break;
+        }
+        case QUIT: // 6
+
+            break;
+        default:
+            printf("\n       >>>>>   Concentration!!   <<<<<      \n");
+            break;
+        }
+    } while (command != QUIT);
 }
