@@ -163,12 +163,11 @@ UnionFindNode *init_UF_Node(int n)
  Parameters: UnionFindNode *node: address of a node
  Return: retrun the address of the most top parent
 ------------------------------------------------------------------------*/
-UnionFindNode *UF_find(UnionFindNode *node) // 추가 사항 경로 압축
+UnionFindNode *UF_find(UnionFindNode *node) 
 {
-    UnionFindNode *cur = node;
-    for (; cur->parent != cur; cur = cur->parent)
-        ; // 부모 노드를 찾을때까지
-    return cur;
+    if (node->parent != node)
+        node->parent = UF_find(node->parent); // 경로 압축
+    return node->parent;
 }
 
 /*------------------------------------------------------------------------
