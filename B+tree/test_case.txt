@@ -94,3 +94,15 @@ delete(30);
 delete(40);
 delete(50);
 delete(60);
+
+
+// 교수님 책
+insert(8, "A");
+insert(5, "A");
+insert(1, "A");
+insert(7, "A");
+insert(3, "A");
+insert(12, "A");
+insert(9, "A");
+insert(6, "A");
+dfs();

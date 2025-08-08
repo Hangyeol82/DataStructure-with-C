@@ -24,9 +24,12 @@ Copyright (c) 2025 Hangyeol Lee. All rights reserved.
 #define DELETE 2
 #define RETRIEVE 3
 #define UPDATE 4
-#define DFS 5
-#define BFS 6
-#define QUIT 7
+#define RANGESEARCH 5
+#define DFS 6
+#define BFS 7
+#define QUIT 8
+
+/* 기준점 왼쪽으로 수정, 범위 탐색함수 추가 */
 
 typedef struct Node
 {
@@ -268,12 +271,12 @@ int insert_into_parent(FILE *tree, int parent_loc, int left_child_loc, int right
 
         if (parent.cnt >= ORDER) // overflow!
         {
-            parent.cnt = (ORDER - 1) / 2; // cnt 개수 변경
+            parent.cnt = ORDER / 2; // cnt 개수 변경
 
             Node right;
             right.tag = 0;
             right.parent = parent.parent;
-            right.cnt = ORDER / 2; // 새로운 노드 right 초기화
+            right.cnt = (ORDER - 1) / 2; // 새로운 노드 right 초기화
 
             int si = 0;
             for (int i = parent.cnt + 1; i <= ORDER; i++) // right 초기화
@@ -360,7 +363,7 @@ int insert(int num, char name[])
             for (int i = 0; i <= cur.cnt; i++) // keys(분기)
             {
                 loc = cur.value[i];
-                if (num < cur.keys[i]) // keys[i]의 값보다 작으면 value[i]로 이동
+                if (num <= cur.keys[i]) // keys[i]의 값보다 작으면 value[i]로 이동
                 {
                     break;
                 }
@@ -394,12 +397,13 @@ int insert(int num, char name[])
         if (cur.cnt >= ORDER) // 오버플로우 -> split
         {
             /* 리프노드 분기 */
-            cur.cnt = ORDER / 2;
+            cur.cnt = ORDER / 2 + 1;
 
             Node right; // 노드를 두개로 분기
             right.tag = 1;
             right.cnt = ORDER - cur.cnt;
             right.parent = cur.parent;
+            right.next = cur.next;
 
             int si = 0; // right의 key & value의 값을 할당
             for (int i = cur.cnt; i < ORDER; i++)
@@ -407,8 +411,8 @@ int insert(int num, char name[])
                 right.keys[si] = cur.keys[i];
                 right.value[si++] = cur.value[i];
             }
-            int right_loc = insert_node(tree, right);                                                   // 새로 만든 리프노드 파일에 삽입
-            int new_parent_loc = insert_into_parent(tree, right.parent, loc, right_loc, right.keys[0]); // 부모가 없으면 새로운 부모위치 리턴, 부모가 있으면 OK 리턴
+            int right_loc = insert_node(tree, right);                                                           // 새로 만든 리프노드 파일에 삽입
+            int new_parent_loc = insert_into_parent(tree, right.parent, loc, right_loc, cur.keys[cur.cnt - 1]); // 부모가 없으면 새로운 부모위치 리턴, 부모가 있으면 OK 리턴
 
             cur.next = right_loc; // 리프노드끼리 연결리스트로 연결
 
@@ -466,12 +470,12 @@ int delete_from_parent(FILE *tree, int loc, int index)
     Node cur;
     fseek(tree, loc * Node_size, SEEK_SET);
     fread(&cur, Node_size, 1, tree);
-    cur.cnt--;
     for (int i = index; i < cur.cnt; i++) // index에 해당하는 key & value 삭제
     {
         cur.keys[i] = cur.keys[i + 1];
         cur.value[i + 1] = cur.value[i + 2];
     }
+    cur.cnt--;
     fseek(tree, loc * Node_size, SEEK_SET);
     fwrite(&cur, Node_size, 1, tree);
 
@@ -582,15 +586,11 @@ int delete_from_parent(FILE *tree, int loc, int index)
             else // 왼쪽 형제와 병합하기
             {
                 left.keys[left.cnt] = parent.keys[cur_index - 1]; // 부모의 분기점을 맨 끝에
-                left.value[left.cnt] = cur.value[0];              // cur의 0번 인덱스 value 추가
+                left.value[left.cnt + 1] = cur.value[0];          // cur의 0번 인덱스 value 추가
 
                 fseek(tree, cur.value[0] * Node_size, SEEK_SET);
                 fread(&child, Node_size, 1, tree);          // 자식 읽기
                 child.parent = parent.value[cur_index - 1]; // 자식의 부모 바꿔주기
-                if (child.tag == 1 && left.keys[left.cnt] != child.keys[0])
-                {
-                    left.keys[left.cnt] = child.keys[0];
-                }
                 fseek(tree, cur.value[0] * Node_size, SEEK_SET);
                 fwrite(&child, Node_size, 1, tree); // 자식 업데이트
 
@@ -605,7 +605,19 @@ int delete_from_parent(FILE *tree, int loc, int index)
                     fwrite(&child, Node_size, 1, tree);
                 }
 
+                if (child.tag == 1) // 자식이 리프노드인 경우
+                {
+                    fseek(tree, left.value[left.cnt] * Node_size, SEEK_SET);
+                    fread(&child, Node_size, 1, tree);
+                    if (child.keys[child.cnt - 1] != left.keys[left.cnt])
+                    { // 리프노드의 맨 마지막 Key값과 맞춰야 함
+                        left.keys[left.cnt] = child.keys[child.cnt - 1];
+                        fseek(tree, left.value[left.cnt] * Node_size, SEEK_SET);
+                        fwrite(&child, Node_size, 1, tree);
+                    }
+                }
                 left.cnt += cur.cnt + 1;
+
                 fseek(tree, parent.value[cur_index - 1] * Node_size, SEEK_SET);
                 fwrite(&left, Node_size, 1, tree); // 수정된 left 덮어쓰기
 
@@ -629,11 +641,6 @@ int delete_from_parent(FILE *tree, int loc, int index)
             fseek(tree, right.value[0] * Node_size, SEEK_SET);
             fread(&child, Node_size, 1, tree);
             child.parent = loc; // Value의 부모를 변경했으니 부모 포인트 변경해줘야 함
-
-            if (child.tag == 1 && cur.keys[cur.cnt] != child.keys[0]) // 자식이 리프노드이고 0번째 idx면 key값 변경해줘야 한다
-            {
-                cur.keys[cur.cnt] = child.keys[0];
-            }
             fseek(tree, right.value[0] * Node_size, SEEK_SET);
             fwrite(&child, Node_size, 1, tree);
 
@@ -647,6 +654,19 @@ int delete_from_parent(FILE *tree, int loc, int index)
                 fseek(tree, right.value[ri + 1] * Node_size, SEEK_SET);
                 fwrite(&child, Node_size, 1, tree);
             }
+
+            if (child.tag == 1)
+            {
+                fseek(tree, cur.value[cur.cnt] * Node_size, SEEK_SET);
+                fread(&child, Node_size, 1, tree);
+                if (child.tag == 1 && cur.keys[cur.cnt] != child.keys[child.cnt - 1]) // 자식이 리프노드이고 0번째 idx면 key값 변경해줘야 한다
+                {
+                    cur.keys[cur.cnt] = child.keys[child.cnt - 1];
+                    fseek(tree, cur.value[cur.cnt] * Node_size, SEEK_SET);
+                    fwrite(&child, Node_size, 1, tree);
+                }
+            }
+
             cur.cnt = right.cnt + 1;
 
             fseek(tree, loc * Node_size, SEEK_SET);
@@ -699,7 +719,7 @@ int delete(int num)
         for (int i = 0; i <= cur.cnt; i++)
         {
             index = i;
-            if (cur.keys[i] > num)
+            if (cur.keys[i] >= num)
             {
                 break;
             }
@@ -786,7 +806,7 @@ int delete(int num)
             cur.keys[cur.cnt] = right.keys[0];
             cur.cnt++;
 
-            parent.keys[index] = right.keys[1]; // 부모노드 수정 (우측 형제 key(분기점) 수정)
+            parent.keys[index] = right.keys[0]; // 부모노드 수정 (우측 형제 key(분기점) 수정)
 
             for (int i = 0; i < right.cnt; i++) // 우측형제 수정 (첫번째 Key값 Cur에게 주기)
             {
@@ -810,7 +830,7 @@ int delete(int num)
             if (left.cnt - 1 >= UNDERFLOW) // 좌측 노드에서 하나 빼오기
             {
                 // 부모노드 수정 (cur key(분기점) 수정)
-                parent.keys[index - 1] = left.keys[left.cnt - 1]; // Left의 마지막 Key로 수정
+                parent.keys[index - 1] = left.keys[left.cnt - 2]; // Left의 마지막 Key로 수정
 
                 for (int i = cur.cnt; i > 0; i--) // cur 노드 수정 (밀어내기)
                 {
@@ -820,6 +840,9 @@ int delete(int num)
                 cur.value[0] = left.value[left.cnt - 1];
                 cur.keys[0] = left.keys[--left.cnt]; // left.cnt 수정
                 cur.cnt++;
+
+                if (parent.keys[index] != cur.keys[cur.cnt - 1]) // 만약에 맨 왼쪽을 삭제 했으면
+                    parent.keys[index] = cur.keys[cur.cnt - 1];
 
                 fseek(tree, parent.value[index - 1] * Node_size, SEEK_SET);
                 fwrite(&left, Node_size, 1, tree);
@@ -850,6 +873,9 @@ int delete(int num)
                     fwrite(&left, Node_size, 1, tree);
                 }
             }
+
+            if (parent.keys[index] != cur.keys[cur.cnt - 1])
+                parent.keys[index] = cur.keys[cur.cnt - 1];
         }
         else // 우측노드와 병합
         {
@@ -859,11 +885,12 @@ int delete(int num)
                 cur.keys[ci] = right.keys[ri];
             }
             cur.cnt += right.cnt;
-            cur.next = right.next;
             fseek(tree, loc * Node_size, SEEK_SET);
             fwrite(&cur, Node_size, 1, tree);
 
-            delete_node(tree, cur.next);                                      // 노드 삭제
+            delete_node(tree, cur.next); // 노드 삭제
+            cur.next = right.next;
+
             int new_parent_loc = delete_from_parent(tree, cur.parent, index); // 부모에서 key & value 삭제
 
             if (cur.parent != new_parent_loc) // 부모의 위치가 변경되면 부모 포인터 최신화
@@ -874,13 +901,13 @@ int delete(int num)
             }
         }
     }
-    else if (key_index == 0 && cur.parent != -1) // 0번째 인덱스를 삭제하면 부모의 Key를 수정해야됨
+    else if (key_index == cur.cnt && cur.parent != -1) // 마지막 인덱스를 삭제하면 부모의 Key를 수정해야됨
     {
         Node parent; // 부모노드
         fseek(tree, cur.parent * Node_size, SEEK_SET);
         fread(&parent, Node_size, 1, tree);
 
-        parent.keys[0] = cur.keys[0]; // 부모노드의 삭제하는 리프노드의 분기(Key)의 값을 수정
+        parent.keys[index] = cur.keys[cur.cnt - 1]; // 부모노드의 삭제하는 리프노드의 분기(Key)의 값을 수정
         fseek(tree, cur.parent * Node_size, SEEK_SET);
         fwrite(&parent, Node_size, 1, tree);
     }
@@ -920,7 +947,7 @@ int retrieve(int num)
         for (int i = 0; i <= cur.cnt; i++)
         {
             index = i;
-            if (cur.keys[i] > num)
+            if (cur.keys[i] >= num)
             {
                 break;
             }
@@ -996,7 +1023,7 @@ int update(int num, char name[])
         for (int i = 0; i <= cur.cnt; i++)
         {
             index = i;
-            if (cur.keys[i] > num)
+            if (cur.keys[i] >= num)
             {
                 break;
             }
@@ -1186,6 +1213,97 @@ int bfs()
     return OK;
 }
 
+void range_search(int s, int e)
+{
+    if (e < s)
+    {
+        printf("Wrong Input!\n");
+        return;
+    }
+
+    FILE *tree = fopen(TREEFILENAME, "r+b");
+    if (tree == NULL)
+    {
+        printf("Error in range_search()\n");
+        exit(1);
+    }
+
+    HeadNode head;
+    fread(&head, Node_size, 1, tree);
+
+    Node cur;
+    fseek(tree, head.root_loc * Node_size, SEEK_SET);
+    fread(&cur, Node_size, 1, tree);
+
+    FILE *data = fopen(DATAFILENAME, "r+b");
+    if (data == NULL)
+    {
+        printf("Error in range_search()");
+        exit(1);
+    }
+
+    Data datum;
+
+    int index;               // 부모노드의 리프노드 index
+    int loc = head.root_loc; // 루트노드에서 시작해서 리프노드의 위치를 나타냄
+
+    while (cur.tag != 1) // 리프노드를 찾는 과정
+    {
+        for (int i = 0; i <= cur.cnt; i++)
+        {
+            index = i;
+            if (cur.keys[i] >= s)
+            {
+                break;
+            }
+        }
+        loc = cur.value[index];
+        fseek(tree, loc * Node_size, SEEK_SET);
+        fread(&cur, Node_size, 1, tree);
+    }
+
+    int cnt = 0;    // 전체 값 개수
+    bool check = 0; // 시작점 유무
+    int i;
+    printf("--------------range search-------------\n");
+    for (i = 0; i < cur.cnt; i++)
+    {
+        if (cur.keys[i] >= s || cur.keys[i] <= e) // 시작점 발견
+        {
+            fseek(data, cur.value[i] * Data_size, SEEK_SET);
+            fread(&datum, Data_size, 1, data);
+
+            cnt++;
+            printf("Key: %d Value: %s\n", cur.keys[i++], datum.name);
+            check = 1; // 시작점 발견
+            break;
+        }
+    }
+    while (check)
+    {
+        for (; i < cur.cnt; i++)
+        {
+            if (cur.keys[i] <= e)
+            {
+                fseek(data, cur.value[i] * Data_size, SEEK_SET);
+                fread(&datum, Data_size, 1, data);
+
+                cnt++;
+                printf("Key: %d Value: %s\n", cur.keys[i], datum.name);
+            }
+        }
+        if (cur.next == -1)
+        {
+            break;
+        }
+        fseek(tree, cur.next * Node_size, SEEK_SET);
+        fread(&cur, Node_size, 1, tree);
+        i = 0;
+    }
+    printf("Total counts: %d\n", cnt);
+    printf("--------------range search-------------\n");
+}
+
 /*------------------------------------------------------------------------------
  Function: A debugging function that prints the nodes
            in the order they are stored in the file
@@ -1250,7 +1368,6 @@ int main()
 {
     initialize_tree(); // 트리 초기화
 
-
     int command;
     do
     {
@@ -1259,8 +1376,8 @@ int main()
         printf("----------------------------------------------------------------\n");
         printf(" Add Node       = 1           Delete Node    = 2 \n");
         printf(" Retrieve Node  = 3           Update Node    = 4 \n");
-        printf(" Dfs            = 5           Bfs            = 6 \n");
-        printf(" Quit           = 7 \n");
+        printf(" Range Search   = 5           dfs            = 6 \n");
+        printf(" Bfs            = 7           Quit           = 8 \n");
         printf("----------------------------------------------------------------\n");
 
         printf("Command = ");
@@ -1367,7 +1484,21 @@ int main()
 
             break;
         }
-        case DFS: // 5
+        case RANGESEARCH:
+        {
+            int s, e;
+            printf("Input two numbers for range :");
+            while (scanf("%d %d", &s, e) != 2) // 입력값이 정상이 아닐 경우
+            {
+                printf("Wrong Input!\nInput command again = ");
+                while (getchar() != '\n')
+                    ; // 입력 버퍼 비우기
+            }
+            range_search(s, e);
+
+            break;
+        }
+        case DFS: // 6
         {
             if (dfs() == FAIL)
                 printf("dfs() is failed\n");
@@ -1376,7 +1507,7 @@ int main()
 
             break;
         }
-        case BFS: // 6
+        case BFS: // 7
         {
             if (bfs() == FAIL)
                 printf("bfs() is failed\n");
@@ -1385,7 +1516,7 @@ int main()
 
             break;
         }
-        case QUIT: // 7
+        case QUIT: // 8
             break;
         default:
             printf("\n       >>>>>   Concentration!!   <<<<<      \n");
