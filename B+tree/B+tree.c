@@ -3,7 +3,7 @@ File Name: B+tree.c
 Programmed by: Hangyeol Lee
 Affiliation: Chungbuk University
 Functions: insert(), delete(), retrieve(), update(),
-           dfs(), bfs() in B+tree
+           dfs(), bfs(), range_search() in B+tree
 Copyright (c) 2025 Hangyeol Lee. All rights reserved.
 ---------------------------------------------------------------------*/
 #include <stdio.h>
@@ -28,8 +28,6 @@ Copyright (c) 2025 Hangyeol Lee. All rights reserved.
 #define DFS 6
 #define BFS 7
 #define QUIT 8
-
-/* 기준점 왼쪽으로 수정, 범위 탐색함수 추가 */
 
 typedef struct Node
 {
@@ -1072,6 +1070,13 @@ int update(int num, char name[])
     return OK;
 }
 
+/*------------------------------------------------------------------------------
+ Function: depth first search in B+tree
+ Interface: int dfs()
+ Parameter: None
+ return: if a tree doesn't exist or stack error, return FIAL
+         otherwise. return OK
+------------------------------------------------------------------------------*/
 int dfs()
 {
     FILE *tree = fopen(TREEFILENAME, "r+b");
@@ -1140,6 +1145,13 @@ int dfs()
     return OK;
 }
 
+/*------------------------------------------------------------------------------
+ Function: breath first search in B+tree
+ Interface: int bfs()
+ Parameter: None
+ return: if a tree doesn't exist or queue error, return FIAL
+         otherwise. return OK
+------------------------------------------------------------------------------*/
 int bfs()
 {
     FILE *tree = fopen(TREEFILENAME, "r+b");
@@ -1213,6 +1225,13 @@ int bfs()
     return OK;
 }
 
+/*------------------------------------------------------------------------------
+ Function: print all data between parameters (int s, int e)
+ Interface: void range_search(int s, int e)
+ Parameter: int s: starting point of range
+            int e: ending point of range
+ return: void
+------------------------------------------------------------------------------*/
 void range_search(int s, int e)
 {
     if (e < s)

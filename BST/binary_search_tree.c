@@ -553,7 +553,7 @@ int delete(int num)
  Function: depth first search in binary seach tree
  Interface: int dfs()
  Parameter: None
- return: if a tree doesn't exist, return FIAL
+ return: if a tree doesn't exist or stack error, return FIAL
          otherwise. return OK
 ------------------------------------------------------------------------------*/
 int dfs()
@@ -631,7 +631,7 @@ int dfs()
  Function: breath first search in binary seach tree
  Interface: int bfs()
  Parameter: None
- return: if a tree doesn't exist, return FIAL
+ return: if a tree doesn't exist or queue error, return FIAL
          otherwise. return OK
 ------------------------------------------------------------------------------*/
 int bfs()
