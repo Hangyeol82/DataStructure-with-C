@@ -1,3 +1,11 @@
+/*---------------------------------------------------------------------
+File Name: hash.c
+Programmed by: Hangyeol Lee
+Affiliation: Chungbuk University
+Functions: insert(), delete(), retrieve(), update() in hash
+Copyright (c) 2025 Hangyeol Lee. All rights reserved.
+---------------------------------------------------------------------*/
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -14,9 +22,9 @@
 
 typedef struct Entry
 {
-    int id;
-    char name[10];
-    struct Entry *next;
+    int id;             // 학번
+    char name[10];      // 이름
+    struct Entry *next; // 체이닝으로 같은 해시값의 value 저장
 } Entry;
 
 Entry *hash_table[MAX_TABLE_SIZE]; // 학생 정보를 저장하는 해시 테이블
