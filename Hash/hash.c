@@ -190,6 +190,27 @@ int update(int id, char name[])
     return OK;
 }
 
+/*--------------------------------------------------------------------------
+ Function: free all entries in the hash table
+ Interface: void free_hash()
+ Parameters: none
+ Return: none
+--------------------------------------------------------------------------*/
+void free_hash()
+{
+    for (int i = 0; i < MAX_TABLE_SIZE; i++)
+    {
+        Entry *cur = hash_table[i];
+        while (cur != NULL)
+        {
+            Entry *tmp = cur;
+            cur = cur->next;
+            free(tmp);
+        }
+        hash_table[i] = NULL; // 안전하게 초기화
+    }
+}
+
 int main()
 {
     int command;
@@ -313,7 +334,7 @@ int main()
             break;
         }
         case QUIT: // 6
-
+            free_hash();
             break;
         default:
             printf("\n       >>>>>   Concentration!!   <<<<<      \n");

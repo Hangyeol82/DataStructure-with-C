@@ -308,6 +308,57 @@ int update(int id, char name[])
 }
 
 /*--------------------------------------------------------------------------
+ Function: free all allocated memory in ext_hash
+ Interface: void free_ext_hash()
+ Parameters: void
+ Return: void
+--------------------------------------------------------------------------*/
+void free_ext_hash()
+{
+    if (!ext_hash.address)
+        return;
+
+    /* 방문한 버킷 포인터 목록(간단히 선형 탐색) */
+    Bucket **arr = calloc(ext_hash.size, sizeof(Bucket *));
+    int arr_cnt = 0;
+
+    for (int i = 0; i < ext_hash.size; ++i)
+    {
+        Bucket *b = ext_hash.address[i];
+        if (!b)
+            continue;
+
+        /* 이미 본 버킷인지 검사 */
+        int dup = 0;
+        for (int k = 0; k < arr_cnt; ++k)
+        {
+            if (arr[k] == b)
+            {
+                dup = 1;
+                break;
+            }
+        }
+        if (!dup)
+        {
+            arr[arr_cnt++] = b;
+        }
+    }
+
+    /* 고유 버킷들만 해제 */
+    for (int k = 0; k < arr_cnt; ++k)
+    {
+        free(arr[k]);
+    }
+    free(arr);
+
+    /* 디렉터리 해제 및 상태 초기화 */
+    free(ext_hash.address);
+    ext_hash.address = NULL;
+    ext_hash.size = 0;
+    ext_hash.global_depth = 0;
+}
+
+/*--------------------------------------------------------------------------
  Function: debuging function that prints all values in extendible_hash
  Interface: void dump_dir(void)
  Parameters: void
@@ -463,7 +514,7 @@ int main()
             break;
         }
         case QUIT: // 6
-
+            free_ext_hash();
             break;
         default:
             printf("\n       >>>>>   Concentration!!   <<<<<      \n");
