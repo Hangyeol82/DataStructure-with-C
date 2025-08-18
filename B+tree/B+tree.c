@@ -147,13 +147,13 @@ int insert_data(char name[])
     }
     else // 빈공간(연결리스트)에 삽입
     {
-        FreeData tmp;                           // FreeNode의 정보 저장용 변수
-        fseek(data, head.insert_loc, SEEK_SET); // 연결리스트 첫번째 노드 접근
-        fread(&tmp, Data_size, 1, data);        // 첫번째 노드 tmp에 저장
+        FreeData tmp;                                       // FreeNode의 정보 저장용 변수
+        fseek(data, head.insert_loc * Data_size, SEEK_SET); // 연결리스트 첫번째 노드 접근
+        fread(&tmp, Data_size, 1, data);                    // 첫번째 노드 tmp에 저장
 
-        fseek(data, head.insert_loc, SEEK_END); // 다시 첫번째 노드 접근
-        result = head.insert_loc;               // 삽입하는 데이터 위치 저장
-        fwrite(&insert, Data_size, 1, data);    // 빈 공간(연결리스트 첫번째 노드 위치)에 삽입
+        fseek(data, head.insert_loc * Data_size, SEEK_SET); // 다시 첫번째 노드 접근
+        result = head.insert_loc;                           // 삽입하는 데이터 위치 저장
+        fwrite(&insert, Data_size, 1, data);                // 빈 공간(연결리스트 첫번째 노드 위치)에 삽입
 
         head.insert_loc = tmp.next; // 첫번째 노드의 다음 노드의 위치 Insert_loc에 저장
 
@@ -883,20 +883,17 @@ int delete(int num)
                 cur.keys[ci] = right.keys[ri];
             }
             cur.cnt += right.cnt;
+            int right_loc = cur.next;
+            cur.next = right.next;
             fseek(tree, loc * Node_size, SEEK_SET);
             fwrite(&cur, Node_size, 1, tree);
-
-            delete_node(tree, cur.next); // 노드 삭제
-            cur.next = right.next;
+            
+            delete_node(tree, right_loc); // 노드 삭제
 
             int new_parent_loc = delete_from_parent(tree, cur.parent, index); // 부모에서 key & value 삭제
-
-            if (cur.parent != new_parent_loc) // 부모의 위치가 변경되면 부모 포인터 최신화
-            {
-                cur.parent = new_parent_loc;
-                fseek(tree, loc * Node_size, SEEK_SET);
-                fwrite(&cur, Node_size, 1, tree);
-            }
+            cur.parent = new_parent_loc;
+            fseek(tree, loc * Node_size, SEEK_SET);
+            fwrite(&cur, Node_size, 1, tree);
         }
     }
     else if (key_index == cur.cnt && cur.parent != -1) // 마지막 인덱스를 삭제하면 부모의 Key를 수정해야됨
@@ -1287,7 +1284,7 @@ void range_search(int s, int e)
     printf("--------------range search-------------\n");
     for (i = 0; i < cur.cnt; i++)
     {
-        if (cur.keys[i] >= s || cur.keys[i] <= e) // 시작점 발견
+        if (cur.keys[i] >= s && cur.keys[i] <= e) // 시작점 발견
         {
             fseek(data, cur.value[i] * Data_size, SEEK_SET);
             fread(&datum, Data_size, 1, data);
