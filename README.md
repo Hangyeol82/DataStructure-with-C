@@ -22,7 +22,7 @@
 - [Binary Search Tree (BST)](./BST/README.md)  
   삽입, 탐색, 삭제 기능 포함. 파일 기반 버전.
 - [B+ Tree](./B+tree/README.md)  
-  파일 기반 B+트리. 삽입/삭제/검색, free-list 재사용까지 구현.
+  파일 기반 B+트리. 삽입/삭제/검색 구현.
 - [Graph](./Graph/README.md)  
   인접 리스트 기반 그래프, DFS/BFS, MST(Kruskal) 포함.
 
