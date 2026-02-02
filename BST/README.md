@@ -1,6 +1,6 @@
 # Binary Search Tree (이진 탐색 트리, 파일 기반)
 
-📌 **C 언어로 구현한 파일 기반 이진 탐색 트리 (Binary Search Tree with File Storage)**  
+ **C 언어로 구현한 파일 기반 이진 탐색 트리 (Binary Search Tree with File Storage)**  
 각 노드를 **이진 파일(`bst.bin`)**에 저장하여, 메모리가 아니라 **디스크 기반으로 동작**합니다.  
 삭제 시에는 **Free List**를 활용하여 노드 공간을 재사용합니다.  
 
@@ -8,7 +8,7 @@
 
 ---
 
-## 📖 주요 기능
+## 주요 기능
 
 ### 1. `initialize_tree()`
 - **역할**: 새로운 트리 파일(`bst.bin`)을 초기화.
